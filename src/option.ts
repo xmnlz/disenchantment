@@ -10,6 +10,7 @@ import {
   SlashCommandSubcommandBuilder,
   ChannelType,
 } from "discord.js";
+import type { NotEmptyString } from "./types";
 
 export type Options =
   | OptionInterface<ApplicationCommandOptionType.String>
@@ -22,13 +23,13 @@ export type Options =
   | OptionInterface<ApplicationCommandOptionType.Mentionable>
   | OptionInterface<ApplicationCommandOptionType.Attachment>;
 
-interface ChoiceOption<T extends number | string> {
-  name: string;
+interface ChoiceOption<T extends number | string, N extends string = string> {
+  name: NotEmptyString<N>;
   value: T;
 }
 
-type StringChoice = ChoiceOption<string>;
-type NumberChoice = ChoiceOption<number>;
+type StringChoice = ChoiceOption<string>[];
+type NumberChoice = ChoiceOption<number>[];
 
 interface StringOptionExtra {
   autocomplete?: boolean;
@@ -51,7 +52,7 @@ interface NumberOptionExtra {
   minValue?: number;
 }
 
-interface ChannelOptionExtra {
+export interface ChannelOptionExtra {
   channelTypes?: Exclude<
     ChannelType,
     ChannelType.GroupDM | ChannelType.DM | ChannelType.GuildDirectory
@@ -72,10 +73,11 @@ type OptionExtra<T extends ApplicationCommandOptionType> =
 export interface OptionInterface<
   T extends ApplicationCommandOptionType = ApplicationCommandOptionType,
   N extends string = string,
+  D extends string = string,
   R extends boolean = boolean,
 > {
-  name: N;
-  description: string;
+  name: NotEmptyString<N>;
+  description: NotEmptyString<D>;
   type: T;
   required: R;
   extra?: OptionExtra<T>;
@@ -84,10 +86,11 @@ export interface OptionInterface<
 type Option = <
   T extends ApplicationCommandOptionType,
   N extends string,
+  D extends string,
   R extends boolean,
 >(
-  options: OptionInterface<T, N, R>,
-) => OptionInterface<T, N, R>;
+  options: OptionInterface<T, N, D, R>,
+) => OptionInterface<T, N, D, R>;
 
 export const option: Option = (options) => {
   return options;
@@ -120,7 +123,7 @@ export type ExtractArgs<T extends OptionsMap<any>> = {
 /**
  * TODO: Reimplemnt SlahsCommandBuilder into my own wrapper to create my own json, to make it more convinient
  */
-export function registerOption(
+export function appendOption(
   builder: SlashCommandBuilder | SlashCommandSubcommandBuilder,
   opt: Options,
 ) {
@@ -143,12 +146,9 @@ export function registerOption(
 
           if (maxLength) option.setMaxLength(maxLength);
           if (minLength) option.setMinLength(minLength);
-          if (autocomplete) option.setAutocomplete(autocomplete);
 
-          if (choices) {
-            option.setAutocomplete(true);
-            option.setChoices(choices);
-          }
+          if (choices) option.setChoices(...choices);
+          if (autocomplete) option.setAutocomplete(true);
         }
 
         return option;
@@ -161,15 +161,14 @@ export function registerOption(
           .setRequired(opt.required);
 
         if (opt.extra) {
-          const { minValue, maxValue, autocomplete, choices } = opt.extra;
+          const { maxValue, minValue, autocomplete, choices } = opt.extra;
+
           if (minValue) option.setMinValue(minValue);
           if (maxValue) option.setMaxValue(maxValue);
           if (autocomplete) option.setAutocomplete(autocomplete);
 
-          if (choices) {
-            option.setAutocomplete(true);
-            option.setChoices(choices);
-          }
+          if (choices) option.setChoices(...choices);
+          if (autocomplete) option.setAutocomplete(true);
         }
 
         return option;
@@ -188,10 +187,8 @@ export function registerOption(
           if (maxValue) option.setMaxValue(maxValue);
           if (autocomplete) option.setAutocomplete(autocomplete);
 
-          if (choices) {
-            option.setAutocomplete(true);
-            option.setChoices(choices);
-          }
+          if (choices) option.setChoices(...choices);
+          if (autocomplete) option.setAutocomplete(true);
         }
 
         return option;

@@ -4,7 +4,7 @@ import type {
   SubcommandGroup,
 } from "./command.js";
 import type { EventHandler, SimpleEvent } from "./event.js";
-import { registerOption, type Options } from "./option.js";
+import { appendOption, type Options } from "./option.js";
 
 import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
@@ -58,7 +58,7 @@ export const serializeCommandsForAPI = (
         subCmdBuilder.setName(cmd.name).setDescription(cmd.description);
         if (cmd.options) {
           Object.values(cmd.options).forEach((option) =>
-            registerOption(subCmdBuilder, option as Options),
+            appendOption(subCmdBuilder, option as Options),
           );
         }
         return subCmdBuilder;
@@ -69,7 +69,7 @@ export const serializeCommandsForAPI = (
         .setDescription(cmd.description);
       if (cmd.options) {
         Object.values(cmd.options).forEach((option) =>
-          registerOption(cmdBuilder, option as Options),
+          appendOption(cmdBuilder, option as Options),
         );
       }
       restCommandsBody.push(cmdBuilder.toJSON());
