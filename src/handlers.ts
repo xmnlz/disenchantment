@@ -64,7 +64,9 @@ export const extractCommandOptions = <
   return args as ExtractArgs<T>;
 };
 
-const buildCommandKey = (interaction: ChatInputCommandInteraction): string =>
+export const buildCommandKey = (
+  interaction: ChatInputCommandInteraction,
+): string =>
   [
     interaction.commandName,
     interaction.options.getSubcommandGroup(false),
