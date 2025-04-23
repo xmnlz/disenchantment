@@ -1,13 +1,16 @@
 import { type ExtractArgs, type OptionsMap } from "./option.js";
 import type { GuardFn } from "./guard.js";
+import type { NotEmptyString } from "./types.js";
 
 export type SimpleCommand<
   T extends OptionsMap = OptionsMap,
   C extends Record<string, any> = any,
+  N extends string = string,
+  D extends string = string,
 > = {
   type: "command";
-  name: string;
-  description: string;
+  name: NotEmptyString<N>;
+  description: NotEmptyString<D>;
   options?: T;
   guards?: GuardFn<any, C>[];
   handler: CommandHandler<T, C>;
@@ -15,8 +18,8 @@ export type SimpleCommand<
 
 export interface SubcommandGroup {
   type: "group";
-  name: string;
-  description: string;
+  name: NotEmptyString<string>;
+  description: NotEmptyString<string>;
   commands: (SimpleCommand | SubcommandGroup)[];
 }
 
@@ -39,9 +42,11 @@ export type CommandHandler<
 export const createCommand = <
   T extends OptionsMap,
   C extends Record<string, any> = {},
+  N extends string = string,
+  D extends string = string,
 >(
-  config: Omit<SimpleCommand<T, C>, "type">,
-): SimpleCommand<T, C> => ({
+  config: Omit<SimpleCommand<T, C, N, D>, "type">,
+): SimpleCommand<T, C, N, D> => ({
   type: "command",
   ...config,
 });
