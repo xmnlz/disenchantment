@@ -10,9 +10,9 @@ export type GuardFn<T = any, C extends Record<string, any> = {}> = (
 ) => any;
 
 export const composeGuards = <T, C extends Record<string, any> = {}>(
-  guards: GuardFn<T>[],
-) => {
-  return async (client: Client, interaction: T, next: NextFn, context: C) => {
+  guards: GuardFn<T, C>[],
+): GuardFn<T, C> => {
+  return async (client, interaction, next, context) => {
     let index = -1;
 
     const dispatch = async (i: number) => {
