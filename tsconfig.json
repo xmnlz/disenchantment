@@ -4,7 +4,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleDetection": "force",
-    
+
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
     "noEmit": true,
@@ -14,7 +14,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
 
-    // Some stricter flags 
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": false

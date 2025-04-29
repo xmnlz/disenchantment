@@ -1,19 +1,59 @@
 {
   "name": "disenchantment",
-  "private": true,
   "version": "1.0.0",
+  "description": "A small, simple, fully type‑safe TypeScript library for defining and handling Discord slash commands and events, batteries included.",
+  "main": "./dist/index.js",
   "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
-    "lint": "tsc"
-  },
-  "dependencies": {
-    "discord.js": "^14.18.0"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.2.8"
+    "lint": "biome check . && tsc --noEmit",
+    "format": "biome format --write .",
+    "build": "tsup",
+    "dev": "tsup --watch"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
-  "main": "./src/index.ts"
+  "author": "David Romanovschi <lemmeq9@gmail.com> (https://github.com/xmnlz)",
+  "license": "MIT",
+  "homepage": "https://github.com/xmnlz/disenchantment#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xmnlz/disenchantment.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xmnlz/disenchantment/issues"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "discord.js": "^14.18.0"
+  },
+  "peerDependenciesMeta": {
+    "discord.js": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/bun": "^1.2.8",
+    "discord.js": "^14.18.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "trustedDependencies": ["@biomejs/biome"]
 }
