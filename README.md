@@ -44,7 +44,7 @@ _Discord.js v14 is a peer dependency._
 ## 🏁 Quick Start
 
 ```ts
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, ApplicationCommandOptionType } from "discord.js";
 import {
   createBot,
   createCommand,
