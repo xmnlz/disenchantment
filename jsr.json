@@ -1,0 +1,11 @@
+{
+  "name": "@disenchantment/disenchantment",
+  "version": "1.0.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publish": {
+    "include": ["jsr.json", "LICENSE", "README.md", "src/**/*.ts"],
+    "exclude": ["test"]
+  }
+}
