@@ -53,6 +53,7 @@ import {
   option,
   guards,
   handleCommandInteraction,
+  initApplicationCommands,
   type GuardFn
 } from "disenchantment";
 
