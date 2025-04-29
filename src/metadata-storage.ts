@@ -1,17 +1,17 @@
-import { type RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
-import { type SimpleCommand } from "./command.js";
+import type { RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
+import type { AnySimpleCommand } from "./command.js";
 
 export class MetadataStorage {
   private static _instance: MetadataStorage;
-  private _simpleCommandMap: Map<string, SimpleCommand> = new Map();
+  private _simpleCommandMap: Map<string, AnySimpleCommand> = new Map();
   private _commandJsonBodies: RESTPostAPIChatInputApplicationCommandsJSONBody[] =
     [];
 
   static get instance(): MetadataStorage {
-    if (!this._instance) {
-      this._instance = new MetadataStorage();
+    if (!MetadataStorage._instance) {
+      MetadataStorage._instance = new MetadataStorage();
     }
-    return this._instance;
+    return MetadataStorage._instance;
   }
 
   get commandJsonBodies() {
@@ -28,7 +28,7 @@ export class MetadataStorage {
     this._commandJsonBodies = commands;
   }
 
-  setSimpleCommandMap(map: Map<string, SimpleCommand>) {
+  setSimpleCommandMap(map: Map<string, AnySimpleCommand>) {
     this._simpleCommandMap = map;
   }
 }

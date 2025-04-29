@@ -1,27 +1,30 @@
 import type {
+  AnySimpleCommand,
   CommandOrCommandGroup,
-  SimpleCommand,
   SubcommandGroup,
 } from "./command.js";
 import type { EventHandler, SimpleEvent } from "./event.js";
-import { appendOption, type Options } from "./option.js";
+import type { Options } from "./option.js";
 
 import {
+  ApplicationCommandOptionType,
+  type ClientEvents,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
-  SlashCommandSubcommandGroupBuilder,
+  type SlashCommandSubcommandBuilder,
+  type SlashCommandSubcommandGroupBuilder,
 } from "discord.js";
 
 export const flattenCommandTree = (
   commands: readonly CommandOrCommandGroup[],
-): Map<string, SimpleCommand<any>> => {
-  const commandMap = new Map<string, SimpleCommand<any>>();
+): Map<string, AnySimpleCommand> => {
+  const commandMap = new Map<string, AnySimpleCommand>();
 
   const traverse = (
     commands: readonly CommandOrCommandGroup[],
     prefix: string[] = [],
   ) => {
-    commands.forEach((cmd) => {
+    for (const cmd of commands) {
       const currentPath = [...prefix, cmd.name];
       const key = currentPath.join(" ");
 
@@ -32,10 +35,9 @@ export const flattenCommandTree = (
 
         commandMap.set(key, cmd);
       } else if (cmd.type === "group") {
-        cmd.commands;
         traverse(cmd.commands, currentPath);
       }
-    });
+    }
   };
 
   traverse(commands);
@@ -50,16 +52,16 @@ export const serializeCommandsForAPI = (
     [];
 
   const serializeSimpleCommand = (
-    cmd: SimpleCommand<any>,
+    cmd: AnySimpleCommand,
     builder?: SlashCommandBuilder | SlashCommandSubcommandGroupBuilder,
   ) => {
     if (builder) {
       builder.addSubcommand((subCmdBuilder) => {
         subCmdBuilder.setName(cmd.name).setDescription(cmd.description);
         if (cmd.options) {
-          Object.values(cmd.options).forEach((option) =>
-            appendOption(subCmdBuilder, option as Options),
-          );
+          for (const option of Object.values(cmd.options)) {
+            appendOption(subCmdBuilder, option as Options);
+          }
         }
         return subCmdBuilder;
       });
@@ -68,9 +70,9 @@ export const serializeCommandsForAPI = (
         .setName(cmd.name)
         .setDescription(cmd.description);
       if (cmd.options) {
-        Object.values(cmd.options).forEach((option) =>
-          appendOption(cmdBuilder, option as Options),
-        );
+        for (const option of Object.values(cmd.options)) {
+          appendOption(cmdBuilder, option as Options);
+        }
       }
       restCommandsBody.push(cmdBuilder.toJSON());
     }
@@ -98,45 +100,174 @@ export const serializeCommandsForAPI = (
   };
 
   const traverse = (
-    cmds: (SimpleCommand<any> | SubcommandGroup)[],
+    cmds: (AnySimpleCommand | SubcommandGroup)[],
     builder?: SlashCommandBuilder | SlashCommandSubcommandGroupBuilder,
   ) => {
-    cmds.forEach((cmd) => {
+    for (const cmd of cmds) {
       if (cmd.type === "command") {
         serializeSimpleCommand(cmd, builder);
       } else if (cmd.type === "group") {
         serializeCommandGroup(cmd, builder);
       }
-    });
+    }
   };
 
   traverse(commands);
   return restCommandsBody;
 };
 
+/**
+ * TODO: Reimplemnt SlahsCommandBuilder into my own wrapper to create my own json, to make it more convinient
+ */
+export function appendOption(
+  builder: SlashCommandBuilder | SlashCommandSubcommandBuilder,
+  opt: Options,
+) {
+  switch (opt.type) {
+    case ApplicationCommandOptionType.String:
+      return builder.addStringOption((option) => {
+        option
+          .setName(opt.name)
+          .setDescription(opt.description)
+          .setRequired(opt.required);
+
+        // if (minLength && maxLength && minLength > maxLength) {
+        //   throw new Error(
+        //     maxLength can't be bigger then minLenght, ${minLength} !> ${maxLength},
+        //   );
+        // }
+
+        if (opt.extra) {
+          const { maxLength, minLength, autocomplete, choices } = opt.extra;
+
+          if (maxLength) option.setMaxLength(maxLength);
+          if (minLength) option.setMinLength(minLength);
+
+          if (choices) option.setChoices(...choices);
+          if (autocomplete) option.setAutocomplete(true);
+        }
+
+        return option;
+      });
+    case ApplicationCommandOptionType.Integer:
+      return builder.addIntegerOption((option) => {
+        option
+          .setName(opt.name)
+          .setDescription(opt.description)
+          .setRequired(opt.required);
+
+        if (opt.extra) {
+          const { maxValue, minValue, autocomplete, choices } = opt.extra;
+
+          if (minValue) option.setMinValue(minValue);
+          if (maxValue) option.setMaxValue(maxValue);
+          if (autocomplete) option.setAutocomplete(autocomplete);
+
+          if (choices) option.setChoices(...choices);
+          if (autocomplete) option.setAutocomplete(true);
+        }
+
+        return option;
+      });
+
+    case ApplicationCommandOptionType.Number:
+      return builder.addNumberOption((option) => {
+        option
+          .setName(opt.name)
+          .setDescription(opt.description)
+          .setRequired(opt.required);
+
+        if (opt.extra) {
+          const { minValue, maxValue, autocomplete, choices } = opt.extra;
+          if (minValue) option.setMinValue(minValue);
+          if (maxValue) option.setMaxValue(maxValue);
+          if (autocomplete) option.setAutocomplete(autocomplete);
+
+          if (choices) option.setChoices(...choices);
+          if (autocomplete) option.setAutocomplete(true);
+        }
+
+        return option;
+      });
+    case ApplicationCommandOptionType.Boolean:
+      return builder.addBooleanOption((option) =>
+        option
+          .setName(opt.name)
+          .setDescription(opt.description)
+          .setRequired(opt.required),
+      );
+    case ApplicationCommandOptionType.User:
+      return builder.addUserOption((option) =>
+        option
+          .setName(opt.name)
+          .setDescription(opt.description)
+          .setRequired(opt.required),
+      );
+    case ApplicationCommandOptionType.Channel:
+      return builder.addChannelOption((option) => {
+        option
+          .setName(opt.name)
+          .setDescription(opt.description)
+          .setRequired(opt.required);
+        if (opt.extra) {
+          const { channelTypes } = opt.extra;
+
+          if (channelTypes) {
+            option.addChannelTypes(channelTypes);
+          }
+        }
+
+        return option;
+      });
+    case ApplicationCommandOptionType.Role:
+      return builder.addRoleOption((option) =>
+        option
+          .setName(opt.name)
+          .setDescription(opt.description)
+          .setRequired(opt.required),
+      );
+    case ApplicationCommandOptionType.Mentionable:
+      return builder.addMentionableOption((option) =>
+        option
+          .setName(opt.name)
+          .setDescription(opt.description)
+          .setRequired(opt.required),
+      );
+    case ApplicationCommandOptionType.Attachment:
+      return builder.addAttachmentOption((option) =>
+        option
+          .setName(opt.name)
+          .setDescription(opt.description)
+          .setRequired(opt.required),
+      );
+    default:
+      throw new Error(`Unsupported option type: ${opt}`);
+  }
+}
+
 export type EventHanlderMap = Map<
-  string,
-  { once: EventHandler<any>[]; on: EventHandler<any>[] }
+  keyof ClientEvents,
+  {
+    once: EventHandler<keyof ClientEvents>[];
+    on: EventHandler<keyof ClientEvents>[];
+  }
 >;
 
-export const createEventHandlerMap = (events: SimpleEvent<any>[]) => {
+export const createEventHandlerMap = (
+  events: SimpleEvent<keyof ClientEvents>[],
+): EventHanlderMap => {
   const map: EventHanlderMap = new Map();
 
   for (const { event, handler, once } of events) {
-    const record = map.get(event);
+    const record = map.get(event) || { once: [], on: [] };
 
-    if (record) {
-      if (once) {
-        record.once.push(handler);
-      } else {
-        record.on.push(handler);
-      }
+    if (once) {
+      record.once.push(handler);
     } else {
-      map.set(event, {
-        once: once ? [handler] : [],
-        on: once ? [] : [handler],
-      });
+      record.on.push(handler);
     }
+
+    map.set(event, record);
   }
 
   return map;

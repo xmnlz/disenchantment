@@ -1,16 +1,22 @@
 import {
   ApplicationCommandOptionType,
-  GuildMember,
-  Role,
-  User,
   type Channel,
-  TextChannel,
-  VoiceChannel,
-  SlashCommandBuilder,
-  SlashCommandSubcommandBuilder,
-  ChannelType,
+  type ChannelType,
+  type GuildMember,
+  type Role,
+  type TextChannel,
+  type User,
+  type VoiceChannel,
 } from "discord.js";
 import type { NotEmptyString } from "./types";
+
+export type ValidCommandOptions = Exclude<
+  ApplicationCommandOptionType,
+  | ApplicationCommandOptionType.Subcommand
+  | ApplicationCommandOptionType.SubcommandGroup
+>;
+
+export type AnyOption = OptionInterface<ValidCommandOptions, any, any, any>;
 
 export type Options =
   | OptionInterface<ApplicationCommandOptionType.String>
@@ -59,7 +65,7 @@ export interface ChannelOptionExtra {
   >[];
 }
 
-type OptionExtra<T extends ApplicationCommandOptionType> =
+type OptionExtra<T extends ValidCommandOptions> =
   T extends ApplicationCommandOptionType.String
     ? StringOptionExtra
     : T extends ApplicationCommandOptionType.Integer
@@ -71,7 +77,7 @@ type OptionExtra<T extends ApplicationCommandOptionType> =
           : never;
 
 export interface OptionInterface<
-  T extends ApplicationCommandOptionType = ApplicationCommandOptionType,
+  T extends ValidCommandOptions,
   N extends string = string,
   D extends string = string,
   R extends boolean = boolean,
@@ -84,20 +90,35 @@ export interface OptionInterface<
 }
 
 type Option = <
-  T extends ApplicationCommandOptionType,
-  N extends string,
-  D extends string,
-  R extends boolean,
+  TCommandOptions extends ValidCommandOptions,
+  TName extends string,
+  TDesc extends string,
+  TRequire extends boolean,
 >(
-  options: OptionInterface<T, N, D, R>,
-) => OptionInterface<T, N, D, R>;
+  options: OptionInterface<TCommandOptions, TName, TDesc, TRequire>,
+) => OptionInterface<TCommandOptions, TName, TDesc, TRequire>;
 
+/**
+ * Creates a typed option for use inside a command definition.
+ *
+ * @example
+ * ```ts
+ * const messageOption = option({
+ *   name: "message",
+ *   description: "Text to echo",
+ *   type: ApplicationCommandOptionType.String,
+ *   required: true,
+ *   extra: {
+ *     maxLength: 200,
+ *   },
+ * });
+ * ```
+ *
+ * @param options - A fully typed option object with name, type, description, and constraints.
+ * @returns The same object, with inferred types.
+ */
 export const option: Option = (options) => {
   return options;
-};
-
-export type OptionsMap<T extends Record<string, OptionInterface> = {}> = {
-  [K in keyof T]: T[K];
 };
 
 type OptionTypeMap = {
@@ -111,140 +132,12 @@ type OptionTypeMap = {
   [ApplicationCommandOptionType.Number]: number;
 };
 
-export type OptionValue<T extends ApplicationCommandOptionType> =
+export type OptionValue<T extends ValidCommandOptions> =
   T extends keyof OptionTypeMap ? OptionTypeMap[T] : unknown;
 
-export type ExtractArgs<T extends OptionsMap<any>> = {
-  [K in keyof T]: T[K]["required"] extends true
-    ? OptionValue<T[K]["type"]>
-    : OptionValue<T[K]["type"]> | undefined;
-};
-
-/**
- * TODO: Reimplemnt SlahsCommandBuilder into my own wrapper to create my own json, to make it more convinient
- */
-export function appendOption(
-  builder: SlashCommandBuilder | SlashCommandSubcommandBuilder,
-  opt: Options,
-) {
-  switch (opt.type) {
-    case ApplicationCommandOptionType.String:
-      return builder.addStringOption((option) => {
-        option
-          .setName(opt.name)
-          .setDescription(opt.description)
-          .setRequired(opt.required);
-
-        // if (minLength && maxLength && minLength > maxLength) {
-        //   throw new Error(
-        //     maxLength can't be bigger then minLenght, ${minLength} !> ${maxLength},
-        //   );
-        // }
-
-        if (opt.extra) {
-          const { maxLength, minLength, autocomplete, choices } = opt.extra;
-
-          if (maxLength) option.setMaxLength(maxLength);
-          if (minLength) option.setMinLength(minLength);
-
-          if (choices) option.setChoices(...choices);
-          if (autocomplete) option.setAutocomplete(true);
-        }
-
-        return option;
-      });
-    case ApplicationCommandOptionType.Integer:
-      return builder.addIntegerOption((option) => {
-        option
-          .setName(opt.name)
-          .setDescription(opt.description)
-          .setRequired(opt.required);
-
-        if (opt.extra) {
-          const { maxValue, minValue, autocomplete, choices } = opt.extra;
-
-          if (minValue) option.setMinValue(minValue);
-          if (maxValue) option.setMaxValue(maxValue);
-          if (autocomplete) option.setAutocomplete(autocomplete);
-
-          if (choices) option.setChoices(...choices);
-          if (autocomplete) option.setAutocomplete(true);
-        }
-
-        return option;
-      });
-
-    case ApplicationCommandOptionType.Number:
-      return builder.addNumberOption((option) => {
-        option
-          .setName(opt.name)
-          .setDescription(opt.description)
-          .setRequired(opt.required);
-
-        if (opt.extra) {
-          const { minValue, maxValue, autocomplete, choices } = opt.extra;
-          if (minValue) option.setMinValue(minValue);
-          if (maxValue) option.setMaxValue(maxValue);
-          if (autocomplete) option.setAutocomplete(autocomplete);
-
-          if (choices) option.setChoices(...choices);
-          if (autocomplete) option.setAutocomplete(true);
-        }
-
-        return option;
-      });
-    case ApplicationCommandOptionType.Boolean:
-      return builder.addBooleanOption((option) =>
-        option
-          .setName(opt.name)
-          .setDescription(opt.description)
-          .setRequired(opt.required),
-      );
-    case ApplicationCommandOptionType.User:
-      return builder.addUserOption((option) =>
-        option
-          .setName(opt.name)
-          .setDescription(opt.description)
-          .setRequired(opt.required),
-      );
-    case ApplicationCommandOptionType.Channel:
-      return builder.addChannelOption((option) => {
-        option
-          .setName(opt.name)
-          .setDescription(opt.description)
-          .setRequired(opt.required);
-        if (opt.extra) {
-          const { channelTypes } = opt.extra;
-
-          if (channelTypes) {
-            option.addChannelTypes(channelTypes);
-          }
-        }
-
-        return option;
-      });
-    case ApplicationCommandOptionType.Role:
-      return builder.addRoleOption((option) =>
-        option
-          .setName(opt.name)
-          .setDescription(opt.description)
-          .setRequired(opt.required),
-      );
-    case ApplicationCommandOptionType.Mentionable:
-      return builder.addMentionableOption((option) =>
-        option
-          .setName(opt.name)
-          .setDescription(opt.description)
-          .setRequired(opt.required),
-      );
-    case ApplicationCommandOptionType.Attachment:
-      return builder.addAttachmentOption((option) =>
-        option
-          .setName(opt.name)
-          .setDescription(opt.description)
-          .setRequired(opt.required),
-      );
-    default:
-      throw new Error(`Unsupported option type: ${opt}`);
-  }
-}
+export type ExtractArgs<T extends Record<string, OptionInterface<any>> = any> =
+  {
+    [K in keyof T]: T[K]["required"] extends true
+      ? OptionValue<T[K]["type"]>
+      : OptionValue<T[K]["type"]> | undefined;
+  };

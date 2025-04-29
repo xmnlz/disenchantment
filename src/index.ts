@@ -4,7 +4,8 @@ export { createCommand } from "./command.js";
 export { createEvent } from "./event.js";
 
 export { group } from "./group.js";
-export { type GuardFn } from "./guard.js";
+export { guards } from "./guard.js";
+export type { GuardFn } from "./guard.js";
 
 export { option } from "./option.js";
 

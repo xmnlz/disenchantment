@@ -1,28 +1,27 @@
 import {
   ApplicationCommandOptionType,
-  ChatInputCommandInteraction,
-  Client,
+  type ChatInputCommandInteraction,
+  type Client,
+  type ClientEvents,
 } from "discord.js";
-import {
-  type ExtractArgs,
-  type OptionInterface,
-  type OptionsMap,
-  type OptionValue,
-} from "./option.js";
-import { MetadataStorage } from "./metadata-storage.js";
 import { composeGuards } from "./guard.js";
+import { MetadataStorage } from "./metadata-storage.js";
+import type {
+  ExtractArgs,
+  OptionInterface,
+  OptionValue,
+  ValidCommandOptions,
+} from "./option.js";
 import type { EventHanlderMap } from "./transformers.js";
 
 const optionExtractors: Record<
-  ApplicationCommandOptionType,
+  ValidCommandOptions,
   (
     interaction: ChatInputCommandInteraction,
     name: string,
     required: boolean,
   ) => unknown
 > = {
-  [ApplicationCommandOptionType.Subcommand]: () => null, // Placeholder
-  [ApplicationCommandOptionType.SubcommandGroup]: () => null, // Placeholder
   [ApplicationCommandOptionType.String]: (interaction, name, required) =>
     interaction.options.getString(name, required),
   [ApplicationCommandOptionType.Integer]: (interaction, name, required) =>
@@ -44,7 +43,7 @@ const optionExtractors: Record<
 };
 
 export const extractCommandOptions = <
-  T extends OptionsMap<Record<string, OptionInterface>>,
+  T extends Record<string, OptionInterface<ValidCommandOptions>>,
 >(
   interaction: ChatInputCommandInteraction,
   options: T,
@@ -52,7 +51,7 @@ export const extractCommandOptions = <
   const args: Record<string, unknown> = {};
 
   for (const [key, opt] of Object.entries(options)) {
-    const extractor = optionExtractors[opt.type];
+    const extractor = (optionExtractors as any)[opt.type];
     if (!extractor) {
       throw new Error(`Unsupported option type: ${opt.type}`);
     }
@@ -85,7 +84,7 @@ export const handleCommandInteraction = async (
 
   const composedGuards = composeGuards(command.guards || []);
 
-  const context: Record<string, any> = {};
+  const context: Record<string, unknown> = {};
 
   await composedGuards(
     interaction.client,
@@ -98,17 +97,25 @@ export const handleCommandInteraction = async (
   );
 };
 
-export function bindClientEventHandlers(
+export const bindClientEventHandlers = (
   client: Client,
   eventMap: EventHanlderMap,
-): void {
+): void => {
   for (const [eventName, { on, once }] of eventMap) {
-    on.forEach((handler) =>
-      client.on(eventName, (...args) => handler(client, ...args)),
-    );
+    for (const handler of on) {
+      client.on(
+        eventName,
+        async (...args: ClientEvents[typeof eventName]) =>
+          await handler(client, ...args),
+      );
+    }
 
-    once.forEach((handler) =>
-      client.once(eventName, (...args) => handler(client, ...args)),
-    );
+    for (const handler of once) {
+      client.once(
+        eventName,
+        async (...args: ClientEvents[typeof eventName]) =>
+          await handler(client, ...args),
+      );
+    }
   }
-}
+};
