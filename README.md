@@ -68,8 +68,8 @@ const add = createCommand({
   name: "add",
   description: "Add two numbers",
   options: {
-    x: option({ name: "x", description: "First number", type: "Number", required: true }),
-    y: option({ name: "y", description: "Second number", type: "Number", required: true }),
+    x: option({ name: "x", description: "First number", type: ApplicationCommandOptionType.Number, required: true }),
+    y: option({ name: "y", description: "Second number", type: ApplicationCommandOptionType.Number, required: true }),
   },
   handler: async (interaction, { x, y }) => {
     await interaction.reply(`Result: ${x + y}`);
