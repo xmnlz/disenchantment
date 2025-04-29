@@ -7,6 +7,16 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": ["dist"],
+  "keywords": [
+    "api",
+    "bot",
+    "client",
+    "discord",
+    "framework",
+    "library",
+    "tool",
+    "typescript"
+  ],
   "scripts": {
     "lint": "biome check . && tsc --noEmit",
     "format": "biome format --write .",
@@ -31,7 +41,7 @@
   "homepage": "https://github.com/xmnlz/disenchantment#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/xmnlz/disenchantment.git"
+    "url": "git+https://github.com/xmnlz/disenchantment.git"
   },
   "bugs": {
     "url": "https://github.com/xmnlz/disenchantment/issues"
