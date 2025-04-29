@@ -2,6 +2,7 @@
   "name": "@disenchantment/disenchantment",
   "version": "0.1.0",
   "license": "MIT",
+  "unstable": ["sloppy-imports"],
   "exports": {
     ".": "./src/index.ts"
   },
