@@ -104,7 +104,7 @@ const readyEvent = createEvent({
   handler: async (client) => {
     await client.guilds.fetch();
 
-    await initApplicationCommands(client, ["1040400907545874434"]);
+    await initApplicationCommands(client, ["guild_id"]);
 
     console.log(`Logged in as ${client.user?.tag}`);
   },
