@@ -53,6 +53,7 @@ import {
   option,
   guards,
   handleCommandInteraction,
+  type GuardFn
 } from "disenchantment";
 
 const ping = createCommand({
@@ -75,11 +76,14 @@ const add = createCommand({
   },
 });
 
-const adminOnly = guards.permission("Administrator");
+const adminOnly: GuardFn = (client, interaction, next, context) => {
+  if (interaction.user.id === 'admin_id') next();
+}
+
 const secret = createCommand({
   name: "secret",
   description: "Admin-only command",
-  guards: [adminOnly],
+  guards: guards(adminOnly),
   handler: async (interaction) => {
     await interaction.reply("You’re an admin!");
   },
@@ -87,31 +91,36 @@ const secret = createCommand({
 
 const mathGroup = group("math", "Math operations", [add]);
 
+const interactionCreateEvent = createEvent({
+  event: "interactionCreate",
+  handler: async (client, interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+    await handleCommandInteraction(interaction);
+  },
+});
+
 const readyEvent = createEvent({
   event: "ready",
-  once: true,
   handler: async (client) => {
+    await client.guilds.fetch();
+
+    await initApplicationCommands(client, ["1040400907545874434"]);
+
     console.log(`Logged in as ${client.user?.tag}`);
   },
 });
+
 
 (async () => {
   const client = await createBot({
     clientOptions: {
       intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
-      partials: [],
     },
     commands: [ping, mathGroup, secret],
-    events: [readyEvent],
+    events: [readyEvent, interactionCreateEvent],
   });
 
-  // Register commands globally (or pass guild IDs for per-guild)
   await client.login(process.env.BOT_TOKEN);
-  await client.once("ready", async () => {
-    await client.application?.commands.set();
-  });
-
-  client.on("interactionCreate", handleCommandInteraction);
 })();
 ```
 
