@@ -8,7 +8,7 @@ import type { Client, CommandInteraction } from "discord.js";
  * a `next()` callback to hand off control, and a mutable `context` object.
  *
  * **Always bundle your guards with `guards(...)`** to preserve tuple typing and
- * ensure `ContextFromGuards<…>` correctly infers the combined context type.
+ * ensure the combined context type is correctly inferred.
  *
  * @template InteractionType
  *   The type of interaction you’re protecting (defaults to Discord’s `CommandInteraction`).
@@ -67,8 +67,6 @@ export type NextFn = () => Promise<void>;
  *
  * @example
  * ```ts
- * import { createCommand, guards } from 'your-bot-lib';
- *
  * // A simple logging guard
  * const logGuard: GuardFn = async (client, interaction, next) => {
  *   console.log(`User ${interaction.user.tag} ran ${interaction.commandName}`);
@@ -90,7 +88,7 @@ export type NextFn = () => Promise<void>;
  * // Use in your command
  * export const secret = createCommand({
  *   name: 'secret',
- *   description: 'An admin-only command with logging',
+ *   description: 'An admin only command with logging',
  *   guards: myGuards,
  *   handler: async (interaction) => {
  *     await interaction.reply('Shh… this is a secret.');

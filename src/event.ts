@@ -10,7 +10,7 @@ export type EventHandler<TEvent extends keyof ClientEvents> = (
  *
  * Supports both `on` (repeat) and `once` (one-time) behaviors.
  *
- * @template TEvent - The name of the Discord.js event.
+ * @template TEvent - The name of the Discord.js event. (will be inherited from event name)
  */
 export interface SimpleEvent<TEvent extends keyof ClientEvents> {
   /**
