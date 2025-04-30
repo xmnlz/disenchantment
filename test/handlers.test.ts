@@ -31,6 +31,9 @@ class FakeOptions {
   getNumber(name: string) {
     return this.values[name];
   }
+  getMember(name: string) {
+    return this.values[name];
+  }
   getBoolean(name: string) {
     return this.values[name];
   }
