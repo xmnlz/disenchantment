@@ -76,8 +76,7 @@ export interface SubcommandGroup<
 /**
  * Creates a top-level slash command definition.
  *
- * Accepts an optional set of typed options and guard functions. The resulting command
- * is displayed in Discord and executed when invoked by users.
+ * Accepts an optional set of typed options and guard functions.
  *
  * @example
  * ```ts

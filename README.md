@@ -5,6 +5,9 @@
       A small, simple, fully type-safe TypeScript library for defining and handling Discord slash commands and events, batteries included.
     </strong>
   </p>
+  <p>
+    <em>Inspired by <a href="https://github.com/discordx-ts/discordx">discordx</a></em>
+  </p>
 </div>
 
 ## 📖 Introduction
@@ -20,11 +23,25 @@
 - **Middleware-Style Guards**  
   Attach guard functions to commands for permissions, cooldowns, rate limits, or custom logic.  
 - **Concise Event Maps**  
-  Wire up any Discord.js event—`ready`, `messageCreate`, `guildMemberAdd`, etc.—in one place.  
+  Wire up any Discord.js event `ready`, `messageCreate`, `guildMemberAdd`, etc. in one place.  
 - **Auto-Registration**  
   Serialize and deploy your slash commands to the Discord API with a single async call.  
 - **One-Call Bootstrap**  
-  Spin up your entire bot—client, commands, events, registration—in one `createBot({ … })` invocation.
+  Spin up your entire bot-client, commands, events, registration-in one `createBot({ … })` invocation.
+
+## 🚧 Roadmap (Not Yet Implemented)
+
+1. ⚙️ **Autocomplete**  
+   We plan to add first-class support for Discord’s autocomplete right now you’ll need to handle it yourself.
+
+2. 🔄 **Partial Command Updates**  
+   Smartly patch only changed commands instead of full re-deploys.
+
+3. 🌐 **Command & Group Localizations**  
+   Multiple language support for names, descriptions, and choices.
+
+4. 🛠️ **Typed Interaction Contexts**  
+   Stronger, type-safe contexts for slash-command handlers.
 
 ## 🚀 Installation
 
@@ -53,6 +70,7 @@ import {
   option,
   guards,
   handleCommandInteraction,
+  initApplicationCommands,
   type GuardFn
 } from "disenchantment";
 

@@ -14,10 +14,15 @@ import type { NotEmptyString } from "./types.js";
  * ]);
  * ```
  *
+ * @example
+ * ```ts
+ * const nestedsubCommandGroup = group("admin", "General admin commands", [userAdminGroup]);
+ * ```
+ *
  * @param name - Group name (1–32 characters, lowercase).
  * @param description - Group description (max 100 characters).
  * @param commands - Array of subcommands or nested groups.
- * @returns A subcommand group definition.
+ * @returns A subcommand group definition or group of subcommands.
  */
 export const group = <
   TName extends string,

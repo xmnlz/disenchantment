@@ -82,10 +82,15 @@ export interface OptionInterface<
   D extends string = string,
   R extends boolean = boolean,
 > {
+  /** Option identifier (1–32 chars, lowercase) */
   name: NotEmptyString<N>;
+  /** Brief description (max. 100 chars) */
   description: NotEmptyString<D>;
+  /** Discord’s `ApplicationCommandOptionType` code */
   type: T;
+  /** Whether this option must be required by the user */
   required: R;
+  /** Type-specific constraints */
   extra?: OptionExtra<T>;
 }
 
@@ -109,13 +114,14 @@ type Option = <
  *   type: ApplicationCommandOptionType.String,
  *   required: true,
  *   extra: {
- *     maxLength: 200,
+ *     maxLength: 50,
  *   },
  * });
  * ```
  *
- * @param options - A fully typed option object with name, type, description, and constraints.
- * @returns The same object, with inferred types.
+ * @param options - A fully typed option object with name, type, description, requirement flag,
+ *                  and any additional constraints (`extra`).
+ * @returns The same object, with its types preserved for downstream inference.
  */
 export const option: Option = (options) => {
   return options;
