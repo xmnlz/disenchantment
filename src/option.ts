@@ -131,7 +131,7 @@ type OptionTypeMap = {
   [ApplicationCommandOptionType.String]: string;
   [ApplicationCommandOptionType.Integer]: number;
   [ApplicationCommandOptionType.Boolean]: boolean;
-  [ApplicationCommandOptionType.User]: User;
+  [ApplicationCommandOptionType.User]: User | GuildMember;
   [ApplicationCommandOptionType.Channel]: Channel | VoiceChannel | TextChannel;
   [ApplicationCommandOptionType.Role]: Role;
   [ApplicationCommandOptionType.Mentionable]: User | Role | GuildMember;
