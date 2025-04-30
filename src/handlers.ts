@@ -31,7 +31,7 @@ const optionExtractors: Record<
   [ApplicationCommandOptionType.Boolean]: (interaction, name, required) =>
     interaction.options.getBoolean(name, required),
   [ApplicationCommandOptionType.User]: (interaction, name, required) =>
-    interaction.options.getMember(name) ||
+    interaction.options.getMember(name) ??
     interaction.options.getUser(name, required),
   [ApplicationCommandOptionType.Channel]: (interaction, name, required) =>
     interaction.options.getChannel(name, required),
