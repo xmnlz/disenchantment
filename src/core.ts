@@ -27,6 +27,8 @@ export interface BotOptions {
    *     await interaction.reply("Pong!");
    *   },
    * });
+   *
+   * const someGroup = group("healthcheck", "check if bot is running", [pingCommand]);
    * ```
    */
   commands: CommandOrCommandGroup[];
@@ -97,7 +99,7 @@ export async function createBot({
 }
 
 /**
- * Registers your application's slash commands with Discord.
+ * Registers your application's slash commands.
  *
  * Use this after the bot is fully configured and the client is ready.
  * You can register globally or to specific guilds for faster propagation during development.
