@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "license": "MIT",
   "unstable": ["sloppy-imports"],
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "deno.ns"]
+  },
   "exports": {
     ".": "./src/index.ts"
   },
