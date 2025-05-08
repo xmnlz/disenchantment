@@ -8,6 +8,24 @@
   <p>
     <em>Inspired by <a href="https://github.com/discordx-ts/discordx">discordx</a></em>
   </p>
+
+  <p>
+    <a href="https://github.com/xmnlz/disenchantment/actions/workflows/ci.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/xmnlz/disenchantment/ci.yml?branch=main" alt="CI Status" />
+    </a>
+    <a href="./LICENSE">
+      <img src="https://img.shields.io/github/license/xmnlz/disenchantment" alt="License" />
+    </a>
+    <a href="https://www.npmjs.com/package/disenchantment">
+      <img src="https://img.shields.io/npm/v/disenchantment" alt="npm version" />
+    </a>
+    <a href="https://jsr.io/@disenchantment/disenchantment">
+      <img src="https://jsr.io/badges/@disenchantment/disenchantment" alt="JSR" />
+    </a>
+    <a href="https://github.com/xmnlz/disenchantment/commits/main">
+      <img src="https://img.shields.io/github/last-commit/xmnlz/disenchantment" alt="Last Commit" />
+    </a>
+  </p>
 </div>
 
 ## 📖 Introduction
@@ -37,10 +55,7 @@
 2. 🔄 **Partial Command Updates**  
    Smartly patch only changed commands instead of full re-deploys.
 
-3. 🌐 **Command & Group Localizations**  
-   Multiple language support for names, descriptions, and choices.
-
-4. 🛠️ **Typed Interaction Contexts**  
+3. 🛠️ **Typed Interaction Contexts**  
    Stronger, type-safe contexts for slash-command handlers.
 
 ## 🚀 Installation
@@ -61,7 +76,7 @@ _Discord.js v14 is a peer dependency._
 ## 🏁 Quick Start
 
 ```ts
-import { Client, GatewayIntentBits, ApplicationCommandOptionType } from "discord.js";
+import { GatewayIntentBits, ApplicationCommandOptionType } from "discord.js";
 import {
   createBot,
   createCommand,
@@ -71,73 +86,152 @@ import {
   guards,
   handleCommandInteraction,
   initApplicationCommands,
-  type GuardFn
+  type GuardFn,
 } from "disenchantment";
 
-const ping = createCommand({
+// Define a simple ping command with localization
+const pingCommand = createCommand({
   name: "ping",
   description: "Replies with Pong!",
+  nameLocalizations: {
+    // Add localized names
+    fr: "salut",
+    de: "ping",
+  },
+  descriptionLocalizations: {
+    // Add localized descriptions
+    fr: "Répond avec Pong !",
+    de: "Antwortet mit Pong!",
+  },
   handler: async (interaction) => {
     await interaction.reply("Pong!");
   },
 });
 
-const add = createCommand({
+// Define a command with options, including localization for options
+const addCommand = createCommand({
   name: "add",
   description: "Add two numbers",
   options: {
-    x: option({ name: "x", description: "First number", type: ApplicationCommandOptionType.Number, required: true }),
-    y: option({ name: "y", description: "Second number", type: ApplicationCommandOptionType.Number, required: true }),
+    x: option({
+      name: "x",
+      description: "First number",
+      type: ApplicationCommandOptionType.Number,
+      required: true,
+      nameLocalizations: {
+        // Localize option name
+        fr: "premier-nombre",
+        de: "erste-zahl",
+      },
+      descriptionLocalizations: {
+        // Localize option description
+        fr: "Le premier nombre",
+        de: "Die erste Zahl",
+      },
+    }),
+    y: option({
+      name: "y",
+      description: "Second number",
+      type: ApplicationCommandOptionType.Number,
+      required: true,
+      nameLocalizations: {
+        // Localize option name
+        fr: "deuxieme-nombre",
+        de: "zweite-zahl",
+      },
+      descriptionLocalizations: {
+        // Localize option description
+        fr: "Le deuxième nombre",
+        de: "Die zweite Zahl",
+      },
+    }),
   },
   handler: async (interaction, { x, y }) => {
     await interaction.reply(`Result: ${x + y}`);
   },
 });
 
-const adminOnly: GuardFn = (client, interaction, next, context) => {
-  if (interaction.user.id === 'admin_id') next();
-}
+// Define a guard function (e.g., for admin-only commands)
+const adminOnlyGuard: GuardFn = (client, interaction, next, context) => {
+  // Replace 'YOUR_ADMIN_USER_ID' with the actual admin user ID or implement proper permission checking
+  if (interaction.user.id === "YOUR_ADMIN_USER_ID") {
+    next(); // Proceed to the command handler
+  } else {
+    interaction.reply({
+      content: "You don't have permission to use this command.",
+      ephemeral: true,
+    });
+    // Do not call next() to halt the command execution
+  }
+};
 
-const secret = createCommand({
+// Define an admin-only command using the guard, with localization
+const secretCommand = createCommand({
   name: "secret",
-  description: "Admin-only command",
-  guards: guards(adminOnly),
+  description: "An admin-only secret command",
+  nameLocalizations: {
+    // Add localized names
+    fr: "secret",
+    de: "geheim",
+  },
+  descriptionLocalizations: {
+    // Add localized descriptions
+    fr: "Une commande secrète réservée aux administrateurs",
+    de: "Ein nur für Administratoren zugänglicher Geheim-Befehl",
+  },
+  guards: guards(adminOnlyGuard), // Apply the guard
   handler: async (interaction) => {
-    await interaction.reply("You’re an admin!");
+    await interaction.reply("You've accessed the secret command!");
   },
 });
 
-const mathGroup = group("math", "Math operations", [add]);
+// Group related commands, including localization for the group
+const mathGroup = group("math", "Mathematical operations", [addCommand], {
+  // Add localized names and descriptions for the group
+  nameLocalizations: {
+    fr: "maths",
+    de: "mathematik",
+  },
+  descriptionLocalizations: {
+    fr: "Opérations mathématiques",
+    de: "Mathematische Operationen",
+  },
+});
 
+// Define an event handler for interactions
 const interactionCreateEvent = createEvent({
   event: "interactionCreate",
-  handler: async (client, interaction) => {
-    if (!interaction.isChatInputCommand()) return;
-    await handleCommandInteraction(interaction);
+  handler: async (_client, interaction) => {
+    if (!interaction.isChatInputCommand()) return; // Only handle chat input commands
+    await handleCommandInteraction(interaction); // Process the command
   },
 });
 
+// Define an event handler for the bot being ready
 const readyEvent = createEvent({
   event: "ready",
   handler: async (client) => {
-    await client.guilds.fetch();
+    await client.guilds.fetch(); // Fetch guilds if needed
 
-    await initApplicationCommands(client, ["guild_id"]);
+    // Initialize application commands - replace 'YOUR_GUILD_ID' with your guild ID for testing
+    // For global commands, omit the guild ID array: await initApplicationCommands(client);
+    await initApplicationCommands(client, ["YOUR_GUILD_ID"]);
 
     console.log(`Logged in as ${client.user?.tag}`);
   },
 });
 
-
+// Bootstrap the bot
 (async () => {
   const client = await createBot({
     clientOptions: {
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages], // Specify required intents
     },
-    commands: [ping, mathGroup, secret],
-    events: [readyEvent, interactionCreateEvent],
+    commands: [pingCommand, mathGroup, secretCommand], // Include all your commands and groups
+    events: [readyEvent, interactionCreateEvent], // Include all your event handlers
   });
 
+  // Login to Discord - ensure BOT_TOKEN is set in your environment variables
   await client.login(process.env.BOT_TOKEN);
 })();
 ```
@@ -152,3 +246,4 @@ const readyEvent = createEvent({
 ## 📜 License
 
 Distributed under the **MIT** License. See [`LICENSE`](./LICENSE) for details.
+
