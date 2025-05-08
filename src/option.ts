@@ -32,7 +32,7 @@ export type Options =
 
 interface ChoiceOption<T extends number | string, N extends string = string> {
   name: NotEmptyString<N>;
-  nameLocalizations: LocalizationMap;
+  nameLocalizations?: LocalizationMap;
   value: T;
 }
 

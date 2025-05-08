@@ -48,7 +48,17 @@ export function appendOption(builder: Builder, opt: Options) {
 
           if (minLength) o.setMinLength(minLength);
           if (maxLength) o.setMaxLength(maxLength);
-          if (choices) o.setChoices(...choices);
+
+          if (choices) {
+            const apiChoices = choices.map((choice) => ({
+              name: choice.name,
+              value: choice.value,
+              name_localizations: choice.nameLocalizations,
+            }));
+
+            o.setChoices(...apiChoices);
+          }
+
           if (autocomplete) o.setAutocomplete(true);
         }
 
@@ -65,7 +75,17 @@ export function appendOption(builder: Builder, opt: Options) {
 
           if (minValue) o.setMinValue(minValue);
           if (maxValue) o.setMaxValue(maxValue);
-          if (choices) o.setChoices(...choices);
+
+          if (choices) {
+            const apiChoices = choices.map((choice) => ({
+              name: choice.name,
+              value: choice.value,
+              name_localizations: choice.nameLocalizations,
+            }));
+
+            o.setChoices(...apiChoices);
+          }
+
           if (autocomplete) o.setAutocomplete(true);
         }
 
@@ -82,7 +102,17 @@ export function appendOption(builder: Builder, opt: Options) {
 
           if (minValue) o.setMinValue(minValue);
           if (maxValue) o.setMaxValue(maxValue);
-          if (choices) o.setChoices(...choices);
+
+          if (choices) {
+            const apiChoices = choices.map((choice) => ({
+              name: choice.name,
+              value: choice.value,
+              name_localizations: choice.nameLocalizations,
+            }));
+
+            o.setChoices(...apiChoices);
+          }
+
           if (autocomplete) o.setAutocomplete(true);
         }
 
