@@ -27,14 +27,7 @@ export const flattenCommandTree = (
         const existing = map.get(key);
 
         if (existing) {
-          throw new Error(
-            [
-              "Duplicate command definition detected:",
-              `-> First at: "${key}"`,
-              `-> Second at: "${[...prefix, existing.name].join(" ")}"`,
-              "Hint: rename the command or restructure your groups.",
-            ].join("\n"),
-          );
+          throw new Error(`Duplicate command definition detected: ${key}`);
         }
 
         map.set(key, node);
