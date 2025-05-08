@@ -2,11 +2,12 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import {
   ApplicationCommandOptionType,
   ChannelType,
+  LocalizationMap,
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 import { Options, option } from "../src/option";
-import { appendOption } from "../src/transformers";
+import { appendOption } from "../src/transformers/options";
 
 function getSingleOption(
   builder: SlashCommandBuilder | SlashCommandSubcommandBuilder,
@@ -299,5 +300,36 @@ describe("appendOption()", () => {
     expect(opt.name).toBe("sub");
     expect(opt.type).toBe(ApplicationCommandOptionType.Boolean);
     expect(opt.required).toBe(false);
+  });
+
+  test("returns the object with name and description localizations if provided", () => {
+    const nameLocalizations: LocalizationMap = { fr: "message" };
+    const descriptionLocalizations: LocalizationMap = { fr: "Texte à répéter" };
+
+    const opt = option({
+      name: "message",
+      description: "Text to echo",
+      type: ApplicationCommandOptionType.String,
+      required: true,
+      nameLocalizations,
+      descriptionLocalizations,
+    });
+
+    expect(opt.name).toBe("message");
+    expect(opt.description).toBe("Text to echo");
+    expect(opt.nameLocalizations).toEqual(nameLocalizations);
+    expect(opt.descriptionLocalizations).toEqual(descriptionLocalizations);
+  });
+
+  test("returns the object without localization maps if none provided", () => {
+    const opt = option({
+      name: "message",
+      description: "Text to echo",
+      type: ApplicationCommandOptionType.String,
+      required: true,
+    });
+
+    expect(opt.nameLocalizations).toBeUndefined();
+    expect(opt.descriptionLocalizations).toBeUndefined();
   });
 });

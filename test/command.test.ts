@@ -1,4 +1,5 @@
 import { describe, expect, it, mock, test } from "bun:test";
+import { LocalizationMap } from "discord.js";
 import { type SimpleCommand, createCommand } from "../src/command";
 import type { GuardFn } from "../src/guard";
 
@@ -6,9 +7,21 @@ describe("createCommand()", () => {
   test("should create a command object with type 'command'", () => {
     const handler = mock().mockResolvedValue(undefined);
 
+    const nameLocalizations: LocalizationMap = {
+      fr: "bonjour",
+      "es-ES": "hola",
+    };
+
+    const descriptionLocalizations: LocalizationMap = {
+      fr: "Dit bonjour !",
+      "es-ES": "Dice hola!",
+    };
+
     const config = {
       name: "cmd",
       description: "d",
+      nameLocalizations,
+      descriptionLocalizations,
       handler,
     };
 

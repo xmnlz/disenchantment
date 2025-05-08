@@ -1,3 +1,5 @@
+import type { LocalizationMap } from "discord.js";
+import type { SubcommandGroup } from "./group";
 import type { ContextFromGuards, GuardFn } from "./guard";
 import type { ExtractArgs } from "./option";
 import type { NotEmptyString } from "./types";
@@ -29,9 +31,25 @@ export interface SimpleCommand<
   name: NotEmptyString<TName>;
 
   /**
+   * Localized versions of the command name.
+   *
+   * Keys must be valid `Locale` identifiers (e.g., 'en-US', 'fr', 'ja').
+   * Values must be lowercase strings between 1 and 32 characters.
+   */
+  nameLocalizations?: LocalizationMap;
+
+  /**
    * A short description of what the command does. Maximum 100 characters.
    */
   description: NotEmptyString<TDesc>;
+
+  /**
+   * Localized versions of the command description.
+   *
+   * Keys must be valid `Locale` identifiers (e.g., 'en-US', 'fr', 'ja').
+   * Values must be strings up to 100 characters.
+   */
+  descriptionLocalizations?: LocalizationMap;
 
   /**
    * Optional input parameters for this command.
@@ -49,30 +67,6 @@ export interface SimpleCommand<
   handler: CommandHandler<TOptions, TGuards>;
 }
 
-/**
- * Represents a group of related subcommands, organized under a common prefix.
- */
-export interface SubcommandGroup<
-  TName extends string = string,
-  TDesc extends string = string,
-> {
-  type: "group";
-
-  /**
-   * The name of the group. Must be 1–32 characters and lowercase.
-   */
-  name: NotEmptyString<TName>;
-
-  /**
-   * A short description of the group’s purpose. Maximum 100 characters.
-   */
-  description: NotEmptyString<TDesc>;
-
-  /**
-   * A list of subcommands or nested groups.
-   */
-  commands: CommandOrCommandGroup[];
-}
 /**
  * Creates a top-level slash command definition.
  *
