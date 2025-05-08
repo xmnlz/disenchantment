@@ -1,6 +1,7 @@
 import { describe, expect, it, test } from "bun:test";
 import { createCommand } from "../src/command";
 import { group } from "../src/group";
+import { LocalizationMap } from "discord.js";
 
 describe("group()", () => {
   test("creates a subcommand group with simple commands", () => {
@@ -64,5 +65,46 @@ describe("group()", () => {
     group("valid-name", "", [validCommand]);
 
     expect(true).toBe(true);
+  });
+
+  test("creates a subcommand group with localization options", () => {
+    const cmd1 = createCommand({
+      name: "foo",
+      description: "foo",
+      handler: async () => {},
+    });
+
+    const nameLocalizations: LocalizationMap = { fr: "outils" };
+    const descriptionLocalizations: LocalizationMap = {
+      fr: "Commandes d'outils",
+    };
+
+    const result = group("tools", "Tooling commands", [cmd1], {
+      nameLocalizations,
+      descriptionLocalizations,
+    });
+
+    expect(result.name).toBe("tools");
+    expect(result.description).toBe("Tooling commands");
+    expect(result.commands.length).toBe(1);
+    expect(result.options?.nameLocalizations).toEqual(nameLocalizations);
+    expect(result.options?.descriptionLocalizations).toEqual(
+      descriptionLocalizations,
+    );
+  });
+
+  test("creates a subcommand group without localization options if none provided", () => {
+    const cmd1 = createCommand({
+      name: "foo",
+      description: "foo",
+      handler: async () => {},
+    });
+
+    const result = group("tools", "Tooling commands", [cmd1]);
+
+    expect(result.name).toBe("tools");
+    expect(result.description).toBe("Tooling commands");
+    expect(result.commands.length).toBe(1);
+    expect(result.options).toBeUndefined();
   });
 });

@@ -1,13 +1,14 @@
 import { describe, expect, mock, test } from "bun:test";
-import { ApplicationCommandOptionType } from "discord.js";
+import { ApplicationCommandOptionType, LocalizationMap } from "discord.js";
 import { createCommand } from "../src/command";
 import { group } from "../src/group";
 import { option } from "../src/option";
+
 import {
-  createEventHandlerMap,
   flattenCommandTree,
   serializeCommandsForAPI,
-} from "../src/transformers";
+} from "../src/transformers/commands";
+import { createEventHandlerMap } from "../src/transformers/events";
 
 describe("flattenCommandTree()", () => {
   test("returns an empty map when given no commands", () => {
@@ -204,6 +205,267 @@ describe("serializeCommandsForAPI()", () => {
     expect(innerOpts).toHaveLength(1);
     expect(innerOpts[0].name).toBe("leaf");
     expect(innerOpts[0].type).toBe(ApplicationCommandOptionType.Subcommand);
+  });
+
+  test("serializes a standalone command with localizations", () => {
+    const nameLocalizations: LocalizationMap = { fr: "parler" };
+    const descriptionLocalizations: LocalizationMap = {
+      fr: "Commande de conversation",
+    };
+
+    const talkCmd = createCommand({
+      name: "talk",
+      description: "A command for talking",
+      handler: mock(),
+      nameLocalizations,
+      descriptionLocalizations,
+    });
+
+    const [json] = serializeCommandsForAPI([talkCmd]);
+
+    expect(json.name).toBe("talk");
+    expect(json.description).toBe("A command for talking");
+    expect(json.name_localizations).toEqual(nameLocalizations);
+    expect(json.description_localizations).toEqual(descriptionLocalizations);
+  });
+
+  test("serializes a command with an option that has localizations", () => {
+    const optionNameLocalizations: LocalizationMap = { fr: "message" };
+    const optionDescriptionLocalizations: LocalizationMap = {
+      fr: "Texte à envoyer",
+    };
+
+    const sendCmd = createCommand({
+      name: "send",
+      description: "Send a message",
+      handler: mock(),
+      options: {
+        msg: option({
+          name: "message",
+          description: "The text to send",
+          type: ApplicationCommandOptionType.String,
+          required: true,
+          nameLocalizations: optionNameLocalizations,
+          descriptionLocalizations: optionDescriptionLocalizations,
+        }),
+      },
+    });
+
+    const [json] = serializeCommandsForAPI([sendCmd]);
+    const options = json.options ?? [];
+    expect(options).toHaveLength(1);
+
+    const optionJson: any = options[0];
+    expect(optionJson.name).toBe("message");
+    expect(optionJson.description).toBe("The text to send");
+    expect(optionJson.name_localizations).toEqual(optionNameLocalizations);
+    expect(optionJson.description_localizations).toEqual(
+      optionDescriptionLocalizations,
+    );
+  });
+
+  test("serializes a group with localizations", () => {
+    const groupNameLocalizations: LocalizationMap = { fr: "admin" };
+    const groupDescriptionLocalizations: LocalizationMap = {
+      fr: "Commandes administrateur",
+    };
+
+    const adminGroup = group(
+      "admin",
+      "Admin commands",
+      [
+        createCommand({
+          name: "ban",
+          description: "Ban a user",
+          handler: mock(),
+        }),
+      ],
+      {
+        nameLocalizations: groupNameLocalizations,
+        descriptionLocalizations: groupDescriptionLocalizations,
+      },
+    );
+
+    const [json] = serializeCommandsForAPI([adminGroup]);
+
+    expect(json.name).toBe("admin");
+    expect(json.description).toBe("Admin commands");
+    expect(json.name_localizations).toEqual(groupNameLocalizations);
+    expect(json.description_localizations).toEqual(
+      groupDescriptionLocalizations,
+    );
+  });
+
+  test("serializes nested structures with localizations at different levels", () => {
+    const outerGroupNameLocalizations: LocalizationMap = { fr: "utilitaires" };
+    const innerGroupNameLocalizations: LocalizationMap = { fr: "nettoyage" };
+
+    const cleanCmdDescriptionLocalizations: LocalizationMap = {
+      fr: "Nettoyer le cache",
+    };
+    const dryRunOptionDescriptionLocalizations: LocalizationMap = {
+      fr: "Simulation",
+    };
+
+    const cleanCmd = createCommand({
+      name: "clean",
+      description: "Clean the cache",
+      handler: mock(),
+      descriptionLocalizations: cleanCmdDescriptionLocalizations,
+      options: {
+        dryRun: option({
+          name: "dry-run",
+          description: "Run without making changes",
+          type: ApplicationCommandOptionType.Boolean,
+          required: false,
+          descriptionLocalizations: dryRunOptionDescriptionLocalizations,
+        }),
+      },
+    });
+
+    const maintenanceGroup = group(
+      "maintenance",
+      "Maintenance tasks",
+      [cleanCmd],
+      { nameLocalizations: innerGroupNameLocalizations },
+    );
+
+    const utilitiesGroup = group(
+      "utilities",
+      "Utility commands",
+      [maintenanceGroup],
+      { nameLocalizations: outerGroupNameLocalizations },
+    );
+
+    const [json] = serializeCommandsForAPI([utilitiesGroup]);
+
+    const outerGroupJson: any = json;
+    expect(outerGroupJson.name).toBe("utilities");
+    expect(outerGroupJson.name_localizations).toEqual(
+      outerGroupNameLocalizations,
+    );
+
+    const innerGroupJson: any = outerGroupJson.options?.[0];
+    expect(innerGroupJson.name).toBe("maintenance");
+    expect(innerGroupJson.type).toBe(
+      ApplicationCommandOptionType.SubcommandGroup,
+    );
+    expect(innerGroupJson.name_localizations).toEqual(
+      innerGroupNameLocalizations,
+    );
+
+    const commandJson: any = innerGroupJson.options?.[0];
+    expect(commandJson.name).toBe("clean");
+    expect(commandJson.type).toBe(ApplicationCommandOptionType.Subcommand);
+    expect(commandJson.description_localizations).toEqual(
+      cleanCmdDescriptionLocalizations,
+    );
+
+    const optionJson: any = commandJson.options?.[0];
+    expect(optionJson.name).toBe("dry-run");
+    expect(optionJson.description_localizations).toEqual(
+      dryRunOptionDescriptionLocalizations,
+    );
+  });
+
+  test("serializes a command with an option having choices with localizations", () => {
+    const choice1NameLocalizations: LocalizationMap = {
+      fr: "choix-un",
+      "es-ES": "opcion-uno",
+    };
+
+    const choice2NameLocalizations: LocalizationMap = {
+      fr: "choix-deux",
+      "es-ES": "opcion-dos",
+    };
+
+    const choices = [
+      {
+        name: "choice-one",
+        value: "one",
+        nameLocalizations: choice1NameLocalizations,
+      },
+      {
+        name: "choice-two",
+        value: "two",
+        nameLocalizations: choice2NameLocalizations,
+      },
+    ];
+
+    const choiceCommand = createCommand({
+      name: "choose",
+      description: "Choose an option",
+      handler: mock(),
+      options: {
+        selection: option({
+          name: "select",
+          description: "Make a selection",
+          type: ApplicationCommandOptionType.String,
+          required: true,
+          extra: { choices },
+        }),
+      },
+    });
+
+    const [json] = serializeCommandsForAPI([choiceCommand]);
+
+    const options = json.options ?? [];
+    expect(options).toHaveLength(1);
+
+    const optionJson: any = options[0];
+
+    expect(optionJson.name).toBe("select");
+    expect(optionJson.type).toBe(ApplicationCommandOptionType.String);
+
+    expect(optionJson.choices).toHaveLength(2);
+
+    const serializedChoice1 = optionJson.choices.find(
+      (c: any) => c.value === "one",
+    );
+    expect(serializedChoice1).toBeDefined();
+    expect(serializedChoice1.name).toBe("choice-one");
+    expect(serializedChoice1.name_localizations).toEqual(
+      choice1NameLocalizations,
+    );
+
+    const serializedChoice2 = optionJson.choices.find(
+      (c: any) => c.value === "two",
+    );
+    expect(serializedChoice2).toBeDefined();
+    expect(serializedChoice2.name).toBe("choice-two");
+    expect(serializedChoice2.name_localizations).toEqual(
+      choice2NameLocalizations,
+    );
+  });
+
+  test("serializes choices without localizations if none provided", () => {
+    const choices = [
+      { name: "yes", value: "confirm" },
+      { name: "no", value: "deny" },
+    ];
+
+    const confirmCommand = createCommand({
+      name: "confirm",
+      description: "Confirm something",
+      handler: mock(),
+      options: {
+        answer: option({
+          name: "response",
+          description: "Your response",
+          type: ApplicationCommandOptionType.String,
+          required: true,
+          extra: { choices: choices as any },
+        }),
+      },
+    });
+
+    const [json] = serializeCommandsForAPI([confirmCommand]);
+    const options = json.options ?? [];
+    const optionJson: any = options[0];
+
+    expect(optionJson.choices).toHaveLength(2);
+    expect(optionJson.choices[0].name_localizations).toBeUndefined();
+    expect(optionJson.choices[1].name_localizations).toBeUndefined();
   });
 });
 

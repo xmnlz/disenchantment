@@ -18,7 +18,7 @@ import {
 } from "../src/handlers";
 import { MetadataStorage } from "../src/metadata-storage";
 import { option } from "../src/option";
-import { flattenCommandTree } from "../src/transformers";
+import { flattenCommandTree } from "../src/transformers/commands";
 
 class FakeOptions {
   constructor(private values: Record<string, any>) {}
@@ -322,7 +322,10 @@ describe("bindClientEventHandlers()", () => {
       },
     } as unknown as Client;
 
-    bindClientEventHandlers(fakeClient, new Map([["X", { on: [], once: [] }]]));
+    bindClientEventHandlers(
+      fakeClient,
+      new Map([["threadDelete", { on: [], once: [] }]]),
+    );
     expect(onCount).toBe(0);
     expect(onceCount).toBe(0);
   });
