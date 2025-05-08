@@ -3,6 +3,7 @@ import {
   type Channel,
   type ChannelType,
   type GuildMember,
+  type LocalizationMap,
   type Role,
   type TextChannel,
   type User,
@@ -31,27 +32,21 @@ export type Options =
 
 interface ChoiceOption<T extends number | string, N extends string = string> {
   name: NotEmptyString<N>;
+  nameLocalizations: LocalizationMap;
   value: T;
 }
 
 type StringChoice = ChoiceOption<string>[];
 type NumberChoice = ChoiceOption<number>[];
 
-interface StringOptionExtra {
+export interface StringOptionExtra {
   autocomplete?: boolean;
   choices?: StringChoice;
   maxLength?: number;
   minLength?: number;
 }
 
-interface IntegerOptionExtra {
-  autocomplete?: boolean;
-  choices?: NumberChoice;
-  maxValue?: number;
-  minValue?: number;
-}
-
-interface NumberOptionExtra {
+export interface IntegerOrNumberOptionExtra {
   autocomplete?: boolean;
   choices?: NumberChoice;
   maxValue?: number;
@@ -69,9 +64,9 @@ type OptionExtra<T extends ValidCommandOptions> =
   T extends ApplicationCommandOptionType.String
     ? StringOptionExtra
     : T extends ApplicationCommandOptionType.Integer
-      ? IntegerOptionExtra
+      ? IntegerOrNumberOptionExtra
       : T extends ApplicationCommandOptionType.Number
-        ? NumberOptionExtra
+        ? IntegerOrNumberOptionExtra
         : T extends ApplicationCommandOptionType.Channel
           ? ChannelOptionExtra
           : never;
@@ -84,8 +79,24 @@ export interface OptionInterface<
 > {
   /** Option identifier (1–32 chars, lowercase) */
   name: NotEmptyString<N>;
+
+  /**
+   * Localized versions of the option name.
+   *
+   * Keys must be valid `Locale` identifiers (e.g., 'en-US', 'fr', 'ja').
+   * Values must be lowercase strings between 1 and 32 characters.
+   */
+  nameLocalizations?: LocalizationMap;
+
   /** Brief description (max. 100 chars) */
   description: NotEmptyString<D>;
+  /**
+   * Localized versions of the option description.
+   *
+   * Keys must be valid `Locale` identifiers (e.g., 'en-US', 'fr', 'ja').
+   * Values must be strings up to 100 characters.
+   */
+  descriptionLocalizations?: LocalizationMap;
   /** Discord’s `ApplicationCommandOptionType` code */
   type: T;
   /** Whether this option must be required by the user */
