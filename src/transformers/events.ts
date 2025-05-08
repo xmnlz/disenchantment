@@ -1,3 +1,6 @@
+import type { ClientEvents } from "discord.js";
+import type { EventHandler, SimpleEvent } from "../event";
+
 export type EventHanlderMap = Map<
   keyof ClientEvents,
   {

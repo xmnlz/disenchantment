@@ -12,7 +12,7 @@ import type {
   OptionValue,
   ValidCommandOptions,
 } from "./option.js";
-import type { EventHanlderMap } from "./transformers.js";
+import type { EventHanlderMap } from "./transformers/events.js";
 
 const optionExtractors: Record<
   ValidCommandOptions,

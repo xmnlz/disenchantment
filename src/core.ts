@@ -4,10 +4,10 @@ import type { SimpleEvent } from "./event.js";
 import { bindClientEventHandlers } from "./handlers.js";
 import { MetadataStorage } from "./metadata-storage.js";
 import {
-  createEventHandlerMap,
   flattenCommandTree,
   serializeCommandsForAPI,
-} from "./transformers.js";
+} from "./transformers/commands.js";
+import { createEventHandlerMap } from "./transformers/events.js";
 
 /**
  * Configuration options for bootstrapping a Discord bot.
