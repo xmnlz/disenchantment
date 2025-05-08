@@ -1,7 +1,7 @@
 import { describe, expect, it, test } from "bun:test";
+import { LocalizationMap } from "discord.js";
 import { createCommand } from "../src/command";
 import { group } from "../src/group";
-import { LocalizationMap } from "discord.js";
 
 describe("group()", () => {
   test("creates a subcommand group with simple commands", () => {
