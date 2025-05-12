@@ -37,7 +37,7 @@ function applyCommon<
   return option;
 }
 
-export function appendOption(builder: Builder, opt: Options) {
+export function applyOption(builder: Builder, opt: Options) {
   switch (opt.type) {
     case ApplicationCommandOptionType.String: {
       return builder.addStringOption((o) => {

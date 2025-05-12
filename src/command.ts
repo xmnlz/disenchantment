@@ -1,4 +1,4 @@
-import type { LocalizationMap } from "discord.js";
+import type { InteractionContextType, LocalizationMap } from "discord.js";
 import type { SubcommandGroup } from "./group";
 import type { ContextFromGuards, GuardFn } from "./guard";
 import type { ExtractArgs } from "./option";
@@ -11,15 +11,17 @@ export type CommandOrCommandGroup = AnySimpleCommand | SubcommandGroup;
 export type CommandHandler<
   TOptions extends Record<string, any>,
   TGuards extends GuardFn<any, any>[],
+  TInteractionContext extends InteractionContextType[],
 > = (
   interaction: any,
-  args: ExtractArgs<TOptions>,
+  args: ExtractArgs<TOptions, TInteractionContext>,
   context: ContextFromGuards<TGuards>,
 ) => Promise<void>;
 
 export interface SimpleCommand<
   TOptions extends Record<string, any> = any,
   TGuards extends GuardFn<any, any>[] = GuardFn<any, any>[],
+  TInteractionContext extends InteractionContextType[] = [],
   TName extends string = string,
   TDesc extends string = string,
 > {
@@ -62,9 +64,24 @@ export interface SimpleCommand<
   guards?: TGuards;
 
   /**
+   * Specifies the interaction contexts in which this command can be registered (e.g., guild-only).
+   *
+   * This property is applicable only to globally-scoped commands.
+   *
+   * When set to `InteractionContextType.Guild`, it enables more accurate type inference—
+   * such as resolving `ApplicationCommandOptionType.User` to a `GuildMember`.
+   *
+   * Note: Type inference remains functional regardless of whether this field is set,
+   * but certain improvements (like `GuildMember` resolution) depend on this context.
+   *
+   * @see https://discord.com/developers/docs/resources/application#installation-context
+   */
+  context?: TInteractionContext;
+
+  /**
    * The function that executes when the command is triggered.
    */
-  handler: CommandHandler<TOptions, TGuards>;
+  handler: CommandHandler<TOptions, TGuards, TInteractionContext>;
 }
 
 /**
@@ -118,11 +135,15 @@ export interface SimpleCommand<
 export const createCommand = <
   TOptions extends Record<string, any> = any,
   TGuards extends GuardFn<any, any>[] = [],
+  TInteractionContext extends InteractionContextType[] = [],
   TName extends string = string,
   TDesc extends string = string,
 >(
-  config: Omit<SimpleCommand<TOptions, TGuards, TName, TDesc>, "type">,
-): SimpleCommand<TOptions, TGuards, TName, TDesc> => ({
+  config: Omit<
+    SimpleCommand<TOptions, TGuards, TInteractionContext, TName, TDesc>,
+    "type"
+  >,
+): SimpleCommand<TOptions, TGuards, TInteractionContext, TName, TDesc> => ({
   type: "command",
   ...config,
 });

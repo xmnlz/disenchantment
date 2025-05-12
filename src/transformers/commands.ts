@@ -1,152 +1,139 @@
 import {
-  type LocalizationMap,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
-  type SlashCommandSubcommandBuilder,
+  SlashCommandSubcommandBuilder,
   type SlashCommandSubcommandGroupBuilder,
 } from "discord.js";
 import type { AnySimpleCommand, CommandOrCommandGroup } from "../command";
 import type { SubcommandGroup } from "../group";
 import type { Options } from "../option";
-import { appendOption } from "./options";
+import { applyOption } from "./options";
 
-export const flattenCommandTree = (
-  commands: readonly CommandOrCommandGroup[],
-): Map<string, AnySimpleCommand> => {
+export function flattenCommandTree(
+  commands: CommandOrCommandGroup[],
+): Map<string, AnySimpleCommand> {
   const map = new Map<string, AnySimpleCommand>();
 
-  const walk = (
-    list: readonly CommandOrCommandGroup[],
-    prefix: string[] = [],
-  ) => {
-    for (const node of list) {
-      const path = [...prefix, node.name];
-      const key = path.join(" ");
+  function walk(nodes: CommandOrCommandGroup[], path: string[] = []) {
+    for (const node of nodes) {
+      const fullPath = [...path, node.name];
+
+      const key = fullPath.join(" ");
 
       if (node.type === "command") {
-        const existing = map.get(key);
-
-        if (existing) {
+        if (map.has(key)) {
           throw new Error(`Duplicate command definition detected: ${key}`);
         }
-
         map.set(key, node);
       } else {
-        walk(node.commands, path);
+        walk(node.commands, fullPath);
       }
     }
-  };
+  }
 
   walk(commands);
   return map;
-};
+}
 
 export const serializeCommandsForAPI = (
-  commands: CommandOrCommandGroup[],
+  items: CommandOrCommandGroup[],
 ): RESTPostAPIChatInputApplicationCommandsJSONBody[] => {
-  return commands.map((cmd) =>
-    cmd.type === "command" ? buildRootCommand(cmd) : buildGroupedCommand(cmd),
+  return items.map((item) =>
+    item.type === "command" ? buildCommand(item) : buildGroup(item),
   );
 };
 
-const applyLocalizations = (
-  builder:
-    | SlashCommandBuilder
-    | SlashCommandSubcommandGroupBuilder
-    | SlashCommandSubcommandBuilder,
-
-  nameLocalizations?: LocalizationMap,
-  descriptionLocalizations?: LocalizationMap,
-) => {
-  if (nameLocalizations) builder.setNameLocalizations(nameLocalizations);
-  if (descriptionLocalizations)
-    builder.setDescriptionLocalizations(descriptionLocalizations);
-};
-
-const buildRootCommand = (cmd: AnySimpleCommand) => {
+const buildCommand = (cmd: AnySimpleCommand) => {
   const builder = new SlashCommandBuilder()
     .setName(cmd.name)
     .setDescription(cmd.description);
 
-  applyLocalizations(
-    builder,
-    cmd.nameLocalizations,
-    cmd.descriptionLocalizations,
-  );
-
-  if (cmd.options) {
-    for (const opt of Object.values(cmd.options)) {
-      appendOption(builder, opt as Options);
-    }
-  }
+  applyCommandMetadate(builder, cmd);
 
   return builder.toJSON();
 };
 
-const buildGroupedCommand = (group: SubcommandGroup) => {
+const buildGroup = (group: SubcommandGroup) => {
   const builder = new SlashCommandBuilder()
     .setName(group.name)
     .setDescription(group.description);
 
-  applyLocalizations(
-    builder,
-    group.options?.nameLocalizations,
-    group.options?.descriptionLocalizations,
-  );
+  applyCommandMetadate(builder, group);
 
   for (const sub of group.commands) {
     if (sub.type === "command") {
-      builder.addSubcommand((subBuilder) => buildSubCommand(subBuilder, sub));
-    } else if (sub.type === "group") {
-      builder.addSubcommandGroup((groupBuilder) =>
-        buildSubCommandGroup(groupBuilder, sub),
-      );
+      builder.addSubcommand((sb) => attachSub(sb, sub));
+    } else {
+      builder.addSubcommandGroup((gb) => attachGroup(gb, sub));
     }
   }
 
   return builder.toJSON();
 };
 
-const buildSubCommand = (
-  subBuilder: SlashCommandSubcommandBuilder,
-  cmd: AnySimpleCommand,
+const attachSub = (
+  builder: SlashCommandSubcommandBuilder,
+  cmd: CommandOrCommandGroup,
 ) => {
-  subBuilder.setName(cmd.name).setDescription(cmd.description);
+  builder.setName(cmd.name).setDescription(cmd.description);
 
-  applyLocalizations(
-    subBuilder,
-    cmd.nameLocalizations,
-    cmd.descriptionLocalizations,
-  );
+  applyCommandMetadate(builder, cmd);
 
-  if (cmd.options) {
-    for (const opt of Object.values(cmd.options)) {
-      appendOption(subBuilder, opt as Options);
-    }
-  }
-
-  return subBuilder;
+  return builder;
 };
 
-const buildSubCommandGroup = (
-  groupBuilder: SlashCommandSubcommandGroupBuilder,
+const attachGroup = (
+  builder: SlashCommandSubcommandGroupBuilder,
   group: SubcommandGroup,
 ) => {
-  groupBuilder.setName(group.name).setDescription(group.description);
+  builder.setName(group.name).setDescription(group.description);
 
-  applyLocalizations(
-    groupBuilder,
-    group.options?.nameLocalizations,
-    group.options?.descriptionLocalizations,
-  );
+  applyCommandMetadate(builder, group);
 
   for (const nested of group.commands) {
-    if (nested.type === "command") {
-      groupBuilder.addSubcommand((subBuilder) =>
-        buildSubCommand(subBuilder, nested),
-      );
-    }
+    builder.addSubcommand((sb) => attachSub(sb, nested));
   }
 
-  return groupBuilder;
+  return builder;
+};
+
+const applyCommandMetadate = (
+  builder:
+    | SlashCommandBuilder
+    | SlashCommandSubcommandBuilder
+    | SlashCommandSubcommandGroupBuilder,
+  node: CommandOrCommandGroup,
+) => {
+  const nameLoc =
+    node.type === "group"
+      ? node.options?.nameLocalizations
+      : node.nameLocalizations;
+
+  const descLoc =
+    node.type === "group"
+      ? node.options?.descriptionLocalizations
+      : node.descriptionLocalizations;
+
+  if (nameLoc) builder.setNameLocalizations(nameLoc);
+  if (descLoc) builder.setDescriptionLocalizations(descLoc);
+
+  if (
+    node.type === "command" &&
+    builder instanceof SlashCommandBuilder &&
+    "context" in node &&
+    node.context
+  ) {
+    builder.setContexts(node.context);
+  }
+
+  if (
+    node.type === "command" &&
+    (builder instanceof SlashCommandBuilder ||
+      builder instanceof SlashCommandSubcommandBuilder) &&
+    node.options
+  ) {
+    for (const opt of Object.values(node.options)) {
+      applyOption(builder, opt as Options);
+    }
+  }
 };

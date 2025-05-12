@@ -7,7 +7,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 import { Options, option } from "../src/option";
-import { appendOption } from "../src/transformers/options";
+import { applyOption } from "../src/transformers/options";
 
 function getSingleOption(
   builder: SlashCommandBuilder | SlashCommandSubcommandBuilder,
@@ -53,7 +53,7 @@ describe("appendOption()", () => {
     };
 
     test("appends a required string option to a command", () => {
-      appendOption(cmd, baseOption);
+      applyOption(cmd, baseOption);
       const opt = getSingleOption(cmd);
       expect(opt).toEqual(cmd.options[0]);
     });
@@ -65,7 +65,7 @@ describe("appendOption()", () => {
         extra: { minLength: 5, maxLength: 50 },
       });
 
-      appendOption(cmd, lengthOption);
+      applyOption(cmd, lengthOption);
       const opt = getSingleOption(cmd);
 
       expect(opt.min_length).toBe(5);
@@ -79,7 +79,7 @@ describe("appendOption()", () => {
         extra: { autocomplete: true },
       });
 
-      appendOption(cmd, autocompleteOption);
+      applyOption(cmd, autocompleteOption);
       const opt = getSingleOption(cmd);
 
       expect(opt.autocomplete).toBe(true);
@@ -96,7 +96,7 @@ describe("appendOption()", () => {
         extra: { choices },
       });
 
-      appendOption(cmd, choiceOption);
+      applyOption(cmd, choiceOption);
       const opt = getSingleOption(cmd);
 
       expect(opt.choices).toEqual(choices);
@@ -111,7 +111,7 @@ describe("appendOption()", () => {
         extra: { choices, minLength: 1, maxLength: 5 },
       });
 
-      appendOption(cmd, fullOption);
+      applyOption(cmd, fullOption);
       const opt = getSingleOption(cmd);
 
       expect(opt.min_length).toBe(1);
@@ -130,7 +130,7 @@ describe("appendOption()", () => {
     };
 
     test("appends a basic integer option", () => {
-      appendOption(cmd, option(baseOption));
+      applyOption(cmd, option(baseOption));
       const opt = getSingleOption(cmd);
       expect(opt).toEqual(cmd.options[0]);
     });
@@ -142,7 +142,7 @@ describe("appendOption()", () => {
         extra: { minValue: 5, maxValue: 100 },
       });
 
-      appendOption(cmd, optionWithMinMax);
+      applyOption(cmd, optionWithMinMax);
       const opt = getSingleOption(cmd);
 
       expect(opt.min_value).toBe(5);
@@ -156,7 +156,7 @@ describe("appendOption()", () => {
         { name: "Twenty", value: 20 },
       ];
 
-      appendOption(cmd, option({ ...baseOption, extra: { choices } }));
+      applyOption(cmd, option({ ...baseOption, extra: { choices } }));
       const opt = getSingleOption(cmd);
 
       expect(opt.choices).toEqual(choices);
@@ -172,7 +172,7 @@ describe("appendOption()", () => {
     };
 
     test("appends a basic number option", () => {
-      appendOption(cmd, option(baseOption));
+      applyOption(cmd, option(baseOption));
       const opt = getSingleOption(cmd);
       expect(opt).toEqual(cmd.options[0]);
     });
@@ -184,7 +184,7 @@ describe("appendOption()", () => {
         extra: { minValue: 0.5, maxValue: 99.9 },
       });
 
-      appendOption(cmd, optionWithMinMax);
+      applyOption(cmd, optionWithMinMax);
       const opt = getSingleOption(cmd);
 
       expect(opt.min_value).toBe(0.5);
@@ -211,7 +211,7 @@ describe("appendOption()", () => {
           required: true,
         });
 
-        appendOption(cmd, mappedOption);
+        applyOption(cmd, mappedOption);
         const opt = getSingleOption(cmd);
 
         expect(opt.type).toBe(type);
@@ -231,7 +231,7 @@ describe("appendOption()", () => {
         required: true,
       });
 
-      appendOption(cmd, channelOpt);
+      applyOption(cmd, channelOpt);
       const opt = getSingleOption(cmd);
 
       expect(opt.type).toBe(ApplicationCommandOptionType.Channel);
@@ -249,7 +249,7 @@ describe("appendOption()", () => {
         },
       });
 
-      appendOption(cmd, channelOption);
+      applyOption(cmd, channelOption);
       const opt = getSingleOption(cmd);
 
       expect(opt.channel_types).toEqual([
@@ -268,7 +268,7 @@ describe("appendOption()", () => {
         extra: { channelTypes: [] },
       });
 
-      appendOption(cmd, emptyChannelOpt);
+      applyOption(cmd, emptyChannelOpt);
       const opt = getSingleOption(cmd);
 
       expect(opt.channel_types).toEqual([]);
@@ -283,13 +283,13 @@ describe("appendOption()", () => {
       required: true,
     });
 
-    expect(() => appendOption(cmd, badOpt as Options)).toThrow(
+    expect(() => applyOption(cmd, badOpt as Options)).toThrow(
       /Unsupported option type/,
     );
   });
 
   test("appends option to a subcommand builder", () => {
-    appendOption(subCmd, {
+    applyOption(subCmd, {
       name: "sub",
       description: "sub desc",
       type: ApplicationCommandOptionType.Boolean,
