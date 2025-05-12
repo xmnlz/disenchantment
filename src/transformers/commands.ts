@@ -2,7 +2,7 @@ import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
-  SlashCommandSubcommandGroupBuilder,
+  type SlashCommandSubcommandGroupBuilder,
 } from "discord.js";
 import type { AnySimpleCommand, CommandOrCommandGroup } from "../command";
 import type { SubcommandGroup } from "../group";

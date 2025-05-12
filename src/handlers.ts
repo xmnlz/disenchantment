@@ -1,9 +1,9 @@
 import {
   ApplicationCommandOptionType,
-  InteractionContextType,
   type ChatInputCommandInteraction,
   type Client,
   type ClientEvents,
+  type InteractionContextType,
 } from "discord.js";
 import { composeGuards } from "./guard.js";
 import { MetadataStorage } from "./metadata-storage.js";

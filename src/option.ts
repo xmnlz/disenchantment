@@ -1,9 +1,9 @@
 import {
   ApplicationCommandOptionType,
-  InteractionContextType,
   type Channel,
   type ChannelType,
   type GuildMember,
+  type InteractionContextType,
   type LocalizationMap,
   type Role,
   type TextChannel,
