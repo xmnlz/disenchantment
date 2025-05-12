@@ -1,5 +1,6 @@
 import {
   ApplicationCommandOptionType,
+  InteractionContextType,
   type ChatInputCommandInteraction,
   type Client,
   type ClientEvents,
@@ -7,8 +8,8 @@ import {
 import { composeGuards } from "./guard.js";
 import { MetadataStorage } from "./metadata-storage.js";
 import type {
+  AnyOption,
   ExtractArgs,
-  OptionInterface,
   OptionValue,
   ValidCommandOptions,
 } from "./option.js";
@@ -44,24 +45,28 @@ const optionExtractors: Record<
 };
 
 export const extractCommandOptions = <
-  T extends Record<string, OptionInterface<ValidCommandOptions>>,
+  TOption extends Record<string, AnyOption>,
+  TInteractionContext extends InteractionContextType[],
 >(
   interaction: ChatInputCommandInteraction,
-  options: T,
-): ExtractArgs<T> => {
+  options: TOption,
+): ExtractArgs<TOption, TInteractionContext> => {
   const args: Record<string, unknown> = {};
 
   for (const [key, opt] of Object.entries(options)) {
     const extractor = (optionExtractors as any)[opt.type];
+
     if (!extractor) {
       throw new Error(`Unsupported option type: ${opt.type}`);
     }
+
     args[key] = extractor(interaction, opt.name, opt.required) as OptionValue<
-      T[typeof key]["type"]
+      TOption[typeof key]["type"],
+      TInteractionContext
     >;
   }
 
-  return args as ExtractArgs<T>;
+  return args as ExtractArgs<TOption, TInteractionContext>;
 };
 
 export const buildCommandKey = (
