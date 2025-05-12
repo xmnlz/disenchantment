@@ -1,5 +1,6 @@
 import {
   ApplicationCommandOptionType,
+  InteractionContextType,
   type Channel,
   type ChannelType,
   type GuildMember,
@@ -30,10 +31,13 @@ export type Options =
   | OptionInterface<ApplicationCommandOptionType.Mentionable>
   | OptionInterface<ApplicationCommandOptionType.Attachment>;
 
-interface ChoiceOption<T extends number | string, N extends string = string> {
-  name: NotEmptyString<N>;
+interface ChoiceOption<
+  TValue extends number | string,
+  TName extends string = string,
+> {
+  name: NotEmptyString<TName>;
   nameLocalizations?: LocalizationMap;
-  value: T;
+  value: TValue;
 }
 
 type StringChoice = ChoiceOption<string>[];
@@ -53,32 +57,34 @@ export interface IntegerOrNumberOptionExtra {
   minValue?: number;
 }
 
+export type AllowedChannel = Exclude<
+  ChannelType,
+  ChannelType.GroupDM | ChannelType.DM | ChannelType.GuildDirectory
+>;
+
 export interface ChannelOptionExtra {
-  channelTypes?: Exclude<
-    ChannelType,
-    ChannelType.GroupDM | ChannelType.DM | ChannelType.GuildDirectory
-  >[];
+  channelTypes?: AllowedChannel[];
 }
 
-type OptionExtra<T extends ValidCommandOptions> =
-  T extends ApplicationCommandOptionType.String
+type OptionExtra<TOption extends ValidCommandOptions> =
+  TOption extends ApplicationCommandOptionType.String
     ? StringOptionExtra
-    : T extends ApplicationCommandOptionType.Integer
+    : TOption extends ApplicationCommandOptionType.Integer
       ? IntegerOrNumberOptionExtra
-      : T extends ApplicationCommandOptionType.Number
+      : TOption extends ApplicationCommandOptionType.Number
         ? IntegerOrNumberOptionExtra
-        : T extends ApplicationCommandOptionType.Channel
+        : TOption extends ApplicationCommandOptionType.Channel
           ? ChannelOptionExtra
           : never;
 
 export interface OptionInterface<
-  T extends ValidCommandOptions,
-  N extends string = string,
-  D extends string = string,
-  R extends boolean = boolean,
+  TOption extends ValidCommandOptions,
+  TName extends string = string,
+  TDesc extends string = string,
+  TRequire extends boolean = boolean,
 > {
   /** Option identifier (1–32 chars, lowercase) */
-  name: NotEmptyString<N>;
+  name: NotEmptyString<TName>;
 
   /**
    * Localized versions of the option name.
@@ -89,7 +95,8 @@ export interface OptionInterface<
   nameLocalizations?: LocalizationMap;
 
   /** Brief description (max. 100 chars) */
-  description: NotEmptyString<D>;
+  description: NotEmptyString<TDesc>;
+
   /**
    * Localized versions of the option description.
    *
@@ -97,12 +104,15 @@ export interface OptionInterface<
    * Values must be strings up to 100 characters.
    */
   descriptionLocalizations?: LocalizationMap;
-  /** Discord’s `ApplicationCommandOptionType` code */
-  type: T;
+
+  /** Discords `ApplicationCommandOptionType` code */
+  type: TOption;
+
   /** Whether this option must be required by the user */
-  required: R;
+  required: TRequire;
+
   /** Type-specific constraints */
-  extra?: OptionExtra<T>;
+  extra?: OptionExtra<TOption>;
 }
 
 type Option = <
@@ -138,23 +148,36 @@ export const option: Option = (options) => {
   return options;
 };
 
-type OptionTypeMap = {
+type IncludesGuild<TContext extends InteractionContextType[]> =
+  InteractionContextType.Guild extends TContext[number] ? true : false;
+
+type OptionTypeMap<TGuildContext extends boolean> = {
   [ApplicationCommandOptionType.String]: string;
   [ApplicationCommandOptionType.Integer]: number;
   [ApplicationCommandOptionType.Boolean]: boolean;
-  [ApplicationCommandOptionType.User]: User | GuildMember;
+  [ApplicationCommandOptionType.Number]: number;
   [ApplicationCommandOptionType.Channel]: Channel | VoiceChannel | TextChannel;
   [ApplicationCommandOptionType.Role]: Role;
-  [ApplicationCommandOptionType.Mentionable]: User | Role | GuildMember;
-  [ApplicationCommandOptionType.Number]: number;
+  [ApplicationCommandOptionType.Mentionable]: TGuildContext extends true
+    ? User | Role | GuildMember
+    : User | Role;
+  [ApplicationCommandOptionType.User]: TGuildContext extends true
+    ? GuildMember
+    : User | GuildMember;
 };
 
-export type OptionValue<T extends ValidCommandOptions> =
-  T extends keyof OptionTypeMap ? OptionTypeMap[T] : unknown;
+export type OptionValue<
+  TOption extends ValidCommandOptions,
+  TInteractionContext extends InteractionContextType[],
+> = TOption extends keyof OptionTypeMap<IncludesGuild<TInteractionContext>>
+  ? OptionTypeMap<IncludesGuild<TInteractionContext>>[TOption]
+  : unknown;
 
-export type ExtractArgs<T extends Record<string, OptionInterface<any>> = any> =
-  {
-    [K in keyof T]: T[K]["required"] extends true
-      ? OptionValue<T[K]["type"]>
-      : OptionValue<T[K]["type"]> | undefined;
-  };
+export type ExtractArgs<
+  TOptions extends Record<string, AnyOption>,
+  TInteractionContext extends InteractionContextType[],
+> = {
+  [K in keyof TOptions]: TOptions[K]["required"] extends true
+    ? OptionValue<TOptions[K]["type"], TInteractionContext>
+    : OptionValue<TOptions[K]["type"], TInteractionContext> | undefined;
+};
