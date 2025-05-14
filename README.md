@@ -55,9 +55,6 @@
 2. 🔄 **Partial Command Updates**  
    Smartly patch only changed commands instead of full re-deploys.
 
-3. 🛠️ **Typed Interaction Contexts**  
-   Stronger, type-safe contexts for slash-command handlers.
-
 ## 🚀 Installation
 
 ```bash
