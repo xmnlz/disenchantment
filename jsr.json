@@ -1,6 +1,6 @@
 {
   "name": "@disenchantment/disenchantment",
-  "version": "0.2.3",
+  "version": "0.3.3",
   "license": "MIT",
   "unstable": ["sloppy-imports"],
   "compilerOptions": {
