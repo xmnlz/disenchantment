@@ -73,7 +73,13 @@ _Discord.js v14 is a peer dependency._
 ## 🏁 Quick Start
 
 ```ts
-import { GatewayIntentBits, ApplicationCommandOptionType } from "discord.js";
+import {
+  GatewayIntentBits,
+  ApplicationCommandOptionType,
+  type CommandInteraction,
+  InteractionContextType,
+} from "discord.js";
+
 import {
   createBot,
   createCommand,
@@ -100,7 +106,7 @@ const pingCommand = createCommand({
     fr: "Répond avec Pong !",
     de: "Antwortet mit Pong!",
   },
-  handler: async (interaction) => {
+  handler: async (interaction: CommandInteraction) => {
     await interaction.reply("Pong!");
   },
 });
@@ -143,13 +149,18 @@ const addCommand = createCommand({
       },
     }),
   },
-  handler: async (interaction, { x, y }) => {
+  handler: async (interaction: CommandInteraction, { x, y }) => {
     await interaction.reply(`Result: ${x + y}`);
   },
 });
 
 // Define a guard function (e.g., for admin-only commands)
-const adminOnlyGuard: GuardFn = (client, interaction, next, context) => {
+const adminOnlyGuard: GuardFn<CommandInteraction> = (
+  _client,
+  interaction,
+  next,
+  _context,
+) => {
   // Replace 'YOUR_ADMIN_USER_ID' with the actual admin user ID or implement proper permission checking
   if (interaction.user.id === "YOUR_ADMIN_USER_ID") {
     next(); // Proceed to the command handler
@@ -176,8 +187,9 @@ const secretCommand = createCommand({
     fr: "Une commande secrète réservée aux administrateurs",
     de: "Ein nur für Administratoren zugänglicher Geheim-Befehl",
   },
+  context: [InteractionContextType.Guild],
   guards: guards(adminOnlyGuard), // Apply the guard
-  handler: async (interaction) => {
+  handler: async (interaction: CommandInteraction) => {
     await interaction.reply("You've accessed the secret command!");
   },
 });
