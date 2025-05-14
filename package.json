@@ -57,8 +57,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@types/bun": "^1.2.11",
-    "discord.js": "^14.19.2",
+    "@types/bun": "^1.2.13",
+    "discord.js": "^14.19.3",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3"
   },
