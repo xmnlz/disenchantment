@@ -1,8 +1,11 @@
-import type { Client, ClientEvents } from "discord.js";
+import type { Client, ClientEvents, RestEvents } from "discord.js";
+import type { Emitter } from "./types";
 
-export type EventHandler<TEvent extends keyof ClientEvents> = (
+export type Events = ClientEvents & RestEvents;
+
+export type EventHandler<TEvent extends keyof Events> = (
   client: Client,
-  ...args: ClientEvents[TEvent]
+  ...args: Events[TEvent]
 ) => Promise<void>;
 
 /**
@@ -12,7 +15,7 @@ export type EventHandler<TEvent extends keyof ClientEvents> = (
  *
  * @template TEvent - The name of the Discord.js event. (will be inherited from event name)
  */
-export interface SimpleEvent<TEvent extends keyof ClientEvents> {
+export interface SimpleEvent<TEvent extends keyof Events> {
   /**
    * If true, the handler will be invoked only once.
    */
@@ -27,6 +30,11 @@ export interface SimpleEvent<TEvent extends keyof ClientEvents> {
    * The asynchronous handler function to run when the event is emitted.
    */
   handler: EventHandler<TEvent>;
+  /**
+   * The emitter to listen on. Defaults to `"client"`.
+   * Use `"rest"` for REST events such as `response`, `rateLimited`, etc.
+   */
+  emitter?: Emitter;
 }
 
 /**
@@ -45,7 +53,7 @@ export interface SimpleEvent<TEvent extends keyof ClientEvents> {
  * @param config - The event definition, including the name and handler.
  * @returns A typed event object.
  */
-export const createEvent = <TEvent extends keyof ClientEvents>(
+export const createEvent = <TEvent extends keyof Events>(
   config: SimpleEvent<TEvent>,
 ): SimpleEvent<TEvent> => {
   return config;
