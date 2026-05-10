@@ -475,27 +475,40 @@ describe("createEventHandlerMap()", () => {
 
   test("returns an empty map for no events", () => {
     const map = createEventHandlerMap([]);
-    expect(map.size).toBe(0);
+    expect(map.client.size).toBe(0);
+    expect(map.rest.size).toBe(0);
   });
 
   test("collects 'on' handlers by default", () => {
     const map = createEventHandlerMap([
       { event: "ready", handler: handlerA },
       { event: "ready", handler: handlerB },
+      { event: "response", handler: handlerA },
+      { event: "response", handler: handlerB },
     ]);
-    const rec = map.get("ready")!;
-    expect(rec.on).toEqual([handlerA, handlerB]);
-    expect(rec.once).toEqual([]);
+    const client = map.client.get("ready")!;
+    expect(client.on).toEqual([handlerA, handlerB]);
+    expect(client.once).toEqual([]);
+
+    const rest = map.rest.get("response")!;
+    expect(rest.on).toEqual([handlerA, handlerB]);
+    expect(rest.once).toEqual([]);
   });
 
   test("collects 'once' handlers when flagged", () => {
     const map = createEventHandlerMap([
       { event: "ready", handler: handlerA, once: true },
       { event: "ready", handler: handlerB, once: true },
+      { event: "response", handler: handlerA, once: true },
+      { event: "response", handler: handlerB, once: true },
     ]);
-    const rec = map.get("ready")!;
-    expect(rec.once).toEqual([handlerA, handlerB]);
-    expect(rec.on).toEqual([]);
+    const client = map.client.get("ready")!;
+    expect(client.once).toEqual([handlerA, handlerB]);
+    expect(client.on).toEqual([]);
+
+    const rest = map.rest.get("response")!;
+    expect(rest.once).toEqual([handlerA, handlerB]);
+    expect(rest.on).toEqual([]);
   });
 
   test("aggregates mixed 'on' and 'once' handlers for the same event", () => {
@@ -504,9 +517,17 @@ describe("createEventHandlerMap()", () => {
       { event: "ready", handler: handlerB, once: true },
       { event: "ready", handler: handlerB },
       { event: "ready", handler: handlerA, once: true },
+      { event: "response", handler: handlerA },
+      { event: "response", handler: handlerB, once: true },
+      { event: "response", handler: handlerB },
+      { event: "response", handler: handlerA, once: true },
     ]);
-    const rec = map.get("ready")!;
-    expect(rec.on).toEqual([handlerA, handlerB]);
-    expect(rec.once).toEqual([handlerB, handlerA]);
+    const client = map.client.get("ready")!;
+    expect(client.on).toEqual([handlerA, handlerB]);
+    expect(client.once).toEqual([handlerB, handlerA]);
+
+    const rest = map.rest.get("response")!;
+    expect(rest.on).toEqual([handlerA, handlerB]);
+    expect(rest.once).toEqual([handlerB, handlerA]);
   });
 });
