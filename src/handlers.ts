@@ -4,6 +4,7 @@ import {
   type Client,
   type ClientEvents,
   type InteractionContextType,
+  type RestEvents,
 } from "discord.js";
 import { composeGuards } from "./guard.js";
 import { MetadataStorage } from "./metadata-storage.js";
@@ -13,7 +14,7 @@ import type {
   OptionValue,
   ValidCommandOptions,
 } from "./option.js";
-import type { EventHanlderMap } from "./transformers/events.js";
+import type { EventHandlerMap } from "./transformers/events.js";
 
 const optionExtractors: Record<
   ValidCommandOptions,
@@ -105,9 +106,9 @@ export const handleCommandInteraction = async (
 
 export const bindClientEventHandlers = (
   client: Client,
-  eventMap: EventHanlderMap,
+  eventMap: EventHandlerMap,
 ): void => {
-  for (const [eventName, { on, once }] of eventMap) {
+  for (const [eventName, { on, once }] of eventMap.client) {
     for (const handler of on) {
       client.on(
         eventName,
@@ -120,6 +121,24 @@ export const bindClientEventHandlers = (
       client.once(
         eventName,
         async (...args: ClientEvents[typeof eventName]) =>
+          await handler(client, ...args),
+      );
+    }
+  }
+
+  for (const [eventName, { on, once }] of eventMap.rest) {
+    for (const handler of on) {
+      client.rest.on(
+        eventName,
+        async (...args: RestEvents[typeof eventName]) =>
+          await handler(client, ...args),
+      );
+    }
+
+    for (const handler of once) {
+      client.rest.once(
+        eventName,
+        async (...args: RestEvents[typeof eventName]) =>
           await handler(client, ...args),
       );
     }
