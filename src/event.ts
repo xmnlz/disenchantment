@@ -40,7 +40,9 @@ export interface SimpleEvent<TEvent extends keyof Events> {
 /**
  * Creates a typed event listener for use with your bot configuration.
  *
- * @example
+ * Supports both `ClientEvents` (default) and `RestEvents` via the `emitter` parameter.
+ *
+ * @example Client event:
  * ```ts
  * const onReady = createEvent({
  *   event: "ready",
@@ -50,7 +52,23 @@ export interface SimpleEvent<TEvent extends keyof Events> {
  * });
  * ```
  *
- * @param config - The event definition, including the name and handler.
+ * @example REST event:
+ * ```ts
+ * const onResponse = createEvent({
+ *   event: "response",
+ *   emitter: "rest",
+ *   handler: async (_client, req, res) => {
+ *     console.log(`${req.method} ${req.path} ${res.status}`);
+ *   },
+ * });
+ * ```
+ *
+ * @param event - The name of the event to listen for.
+ * @param handler - The asynchronous handler function to run when the event is emitted.
+ * @param once - If true, the handler will be invoked only once.
+ * @param emitter - The emitter to listen on. Use `"rest"` for {@link RestEvents}
+ * such as `response`, `rateLimited`, `restDebug`, `invalidRequestWarning`,
+ * `hashSweep`, `handlerSweep`. Defaults to `"client"` for {@link ClientEvents}
  * @returns A typed event object.
  */
 export const createEvent = <TEvent extends keyof Events>(
