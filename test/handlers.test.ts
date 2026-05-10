@@ -322,10 +322,10 @@ describe("bindClientEventHandlers()", () => {
       },
     } as unknown as Client;
 
-    bindClientEventHandlers(
-      fakeClient,
-      new Map([["threadDelete", { on: [], once: [] }]]),
-    );
+    bindClientEventHandlers(fakeClient, {
+      client: new Map([["threadDelete", { on: [], once: [] }]]),
+      rest: new Map([["response", { on: [], once: [] }]]),
+    });
     expect(onCount).toBe(0);
     expect(onceCount).toBe(0);
   });
