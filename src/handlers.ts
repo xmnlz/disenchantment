@@ -14,7 +14,7 @@ import type {
   OptionValue,
   ValidCommandOptions,
 } from "./option.js";
-import type { EventHandlerMap } from "./transformers/events.js";
+import { isRestEvent, type EventHandlerMap } from "./transformers/events.js";
 
 const optionExtractors: Record<
   ValidCommandOptions,
@@ -108,39 +108,39 @@ export const bindClientEventHandlers = (
   client: Client,
   eventMap: EventHandlerMap,
 ): void => {
-  for (const [eventName, { on, once }] of eventMap.client) {
-    for (const handler of on) {
-      client.on(
-        eventName,
-        async (...args: ClientEvents[typeof eventName]) =>
-          await handler(client, ...args),
-      );
-    }
+  for (const [eventName, { on, once }] of eventMap) {
+    if (isRestEvent(eventName)) {
+      for (const handler of on) {
+        client.rest.on(
+          eventName,
+          async (...args: RestEvents[typeof eventName]) =>
+            await handler(client, ...args),
+        );
+      }
 
-    for (const handler of once) {
-      client.once(
-        eventName,
-        async (...args: ClientEvents[typeof eventName]) =>
-          await handler(client, ...args),
-      );
-    }
-  }
+      for (const handler of once) {
+        client.rest.once(
+          eventName,
+          async (...args: RestEvents[typeof eventName]) =>
+            await handler(client, ...args),
+        );
+      }
+    } else {
+      for (const handler of on) {
+        client.on(
+          eventName,
+          async (...args: ClientEvents[typeof eventName]) =>
+            await handler(client, ...args),
+        );
+      }
 
-  for (const [eventName, { on, once }] of eventMap.rest) {
-    for (const handler of on) {
-      client.rest.on(
-        eventName,
-        async (...args: RestEvents[typeof eventName]) =>
-          await handler(client, ...args),
-      );
-    }
-
-    for (const handler of once) {
-      client.rest.once(
-        eventName,
-        async (...args: RestEvents[typeof eventName]) =>
-          await handler(client, ...args),
-      );
+      for (const handler of once) {
+        client.once(
+          eventName,
+          async (...args: ClientEvents[typeof eventName]) =>
+            await handler(client, ...args),
+        );
+      }
     }
   }
 };
