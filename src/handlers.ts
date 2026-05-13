@@ -104,7 +104,7 @@ export const handleCommandInteraction = async (
   );
 };
 
-export const bindClientEventHandlers = (
+export const bindEventHandlers = (
   client: Client,
   eventMap: EventHandlerMap,
 ): void => {

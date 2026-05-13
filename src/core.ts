@@ -1,7 +1,7 @@
 import { Client, type ClientOptions } from "discord.js";
 import type { CommandOrCommandGroup } from "./command.js";
 import type { SimpleEvent } from "./event.js";
-import { bindClientEventHandlers } from "./handlers.js";
+import { bindEventHandlers } from "./handlers.js";
 import { MetadataStorage } from "./metadata-storage.js";
 import {
   flattenCommandTree,
@@ -90,7 +90,7 @@ export async function createBot({
   const slashCommands = serializeCommandsForAPI(commands);
   const eventMap = createEventHandlerMap(events);
 
-  bindClientEventHandlers(client, eventMap);
+  bindEventHandlers(client, eventMap);
 
   MetadataStorage.instance.setSimpleCommandMap(commandMap);
   MetadataStorage.instance.setCommandJsonBodies(slashCommands);
