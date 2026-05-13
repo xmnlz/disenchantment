@@ -1,36 +1,30 @@
-import type { ClientEvents, RestEvents } from "discord.js";
+import { RESTEvents, type ClientEvents, type RestEvents } from "discord.js";
 import type { EventHandler, SimpleEvent, Events } from "../event";
 
-export type ClientEventHandlerMap = Map<
-  keyof ClientEvents,
+export type EventHandlerMap = Map<
+  keyof ClientEvents | keyof RestEvents,
   {
-    once: EventHandler<keyof ClientEvents>[];
-    on: EventHandler<keyof ClientEvents>[];
+    once: EventHandler<keyof ClientEvents | keyof RestEvents>[];
+    on: EventHandler<keyof ClientEvents | keyof RestEvents>[];
   }
 >;
 
-export type RestEventHandlerMap = Map<
-  keyof RestEvents,
-  {
-    once: EventHandler<keyof RestEvents>[];
-    on: EventHandler<keyof RestEvents>[];
-  }
->;
-
-export type EventHandlerMap = {
-  client: ClientEventHandlerMap;
-  rest: RestEventHandlerMap;
+export const isRestEvent = (
+  event: keyof ClientEvents | keyof RestEvents,
+): event is keyof RestEvents => {
+  return Object.values(RESTEvents).some(
+    (re) => re === (event as keyof RestEvents),
+  );
 };
 
 export const createEventHandlerMap = (
   events: SimpleEvent<keyof Events>[],
 ): EventHandlerMap => {
-  const client: ClientEventHandlerMap = new Map();
-  const rest: RestEventHandlerMap = new Map();
+  const map: EventHandlerMap = new Map();
 
-  for (const { event, handler, once, emitter } of events) {
-    if (emitter === "rest") {
-      const record = rest.get(event as keyof RestEvents) || {
+  for (const { event, handler, once } of events) {
+    if (isRestEvent(event)) {
+      const record = map.get(event) || {
         once: [],
         on: [],
       };
@@ -41,9 +35,9 @@ export const createEventHandlerMap = (
         record.on.push(handler);
       }
 
-      rest.set(event as keyof RestEvents, record);
+      map.set(event, record);
     } else {
-      const record = client.get(event as keyof ClientEvents) || {
+      const record = map.get(event) || {
         once: [],
         on: [],
       };
@@ -54,9 +48,9 @@ export const createEventHandlerMap = (
         record.on.push(handler);
       }
 
-      client.set(event as keyof ClientEvents, record);
+      map.set(event, record);
     }
   }
 
-  return { client, rest };
+  return map;
 };
