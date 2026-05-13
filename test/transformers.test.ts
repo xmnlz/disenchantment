@@ -475,8 +475,7 @@ describe("createEventHandlerMap()", () => {
 
   test("returns an empty map for no events", () => {
     const map = createEventHandlerMap([]);
-    expect(map.client.size).toBe(0);
-    expect(map.rest.size).toBe(0);
+    expect(map.size).toBe(0);
   });
 
   test("collects 'on' handlers by default", () => {
@@ -486,13 +485,9 @@ describe("createEventHandlerMap()", () => {
       { event: "response", handler: handlerA },
       { event: "response", handler: handlerB },
     ]);
-    const client = map.client.get("ready")!;
+    const client = map.get("ready")!;
     expect(client.on).toEqual([handlerA, handlerB]);
     expect(client.once).toEqual([]);
-
-    const rest = map.rest.get("response")!;
-    expect(rest.on).toEqual([handlerA, handlerB]);
-    expect(rest.once).toEqual([]);
   });
 
   test("collects 'once' handlers when flagged", () => {
@@ -502,13 +497,9 @@ describe("createEventHandlerMap()", () => {
       { event: "response", handler: handlerA, once: true },
       { event: "response", handler: handlerB, once: true },
     ]);
-    const client = map.client.get("ready")!;
+    const client = map.get("ready")!;
     expect(client.once).toEqual([handlerA, handlerB]);
     expect(client.on).toEqual([]);
-
-    const rest = map.rest.get("response")!;
-    expect(rest.once).toEqual([handlerA, handlerB]);
-    expect(rest.on).toEqual([]);
   });
 
   test("aggregates mixed 'on' and 'once' handlers for the same event", () => {
@@ -522,12 +513,8 @@ describe("createEventHandlerMap()", () => {
       { event: "response", handler: handlerB },
       { event: "response", handler: handlerA, once: true },
     ]);
-    const client = map.client.get("ready")!;
+    const client = map.get("ready")!;
     expect(client.on).toEqual([handlerA, handlerB]);
     expect(client.once).toEqual([handlerB, handlerA]);
-
-    const rest = map.rest.get("response")!;
-    expect(rest.on).toEqual([handlerA, handlerB]);
-    expect(rest.once).toEqual([handlerB, handlerA]);
   });
 });

@@ -11,7 +11,7 @@ import {
 import { createCommand } from "../src/command";
 import { GuardFn } from "../src/guard";
 import {
-  bindClientEventHandlers,
+  bindEventHandlers,
   buildCommandKey,
   extractCommandOptions,
   handleCommandInteraction,
@@ -279,7 +279,7 @@ describe("handleCommandInteraction()", () => {
   });
 });
 
-describe("bindClientEventHandlers()", () => {
+describe("bindEventHandlers()", () => {
   test("registers on and once handlers", () => {
     const recorded: string[] = [];
     const eventMap = new Map<string, { on: Function[]; once: Function[] }>([
@@ -299,7 +299,7 @@ describe("bindClientEventHandlers()", () => {
       once: (evt: string, fn: Function) => onceCalls.push({ evt, fn }),
     } as unknown as Client;
 
-    bindClientEventHandlers(fakeClient, eventMap as any);
+    bindEventHandlers(fakeClient, eventMap as any);
     expect(onCalls).toHaveLength(1);
     expect(onceCalls).toHaveLength(1);
     expect(onCalls[0].evt).toBe("E");
@@ -322,10 +322,10 @@ describe("bindClientEventHandlers()", () => {
       },
     } as unknown as Client;
 
-    bindClientEventHandlers(fakeClient, {
-      client: new Map([["threadDelete", { on: [], once: [] }]]),
-      rest: new Map([["response", { on: [], once: [] }]]),
-    });
+    bindEventHandlers(
+      fakeClient,
+      new Map([["threadDelete", { on: [], once: [] }]]),
+    );
     expect(onCount).toBe(0);
     expect(onceCount).toBe(0);
   });
