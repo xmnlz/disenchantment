@@ -1,5 +1,4 @@
 import type { Client, ClientEvents, RestEvents } from "discord.js";
-import type { Emitter } from "./types";
 
 export type Events = ClientEvents & RestEvents;
 
@@ -30,17 +29,10 @@ export interface SimpleEvent<TEvent extends keyof Events> {
    * The asynchronous handler function to run when the event is emitted.
    */
   handler: EventHandler<TEvent>;
-  /**
-   * The emitter to listen on. Defaults to `"client"`.
-   * Use `"rest"` for REST events such as `response`, `rateLimited`, etc.
-   */
-  emitter?: Emitter;
 }
 
 /**
  * Creates a typed event listener for use with your bot configuration.
- *
- * Supports both `ClientEvents` (default) and `RestEvents` via the `emitter` parameter.
  *
  * @example Client event:
  * ```ts
@@ -56,7 +48,6 @@ export interface SimpleEvent<TEvent extends keyof Events> {
  * ```ts
  * const onResponse = createEvent({
  *   event: "response",
- *   emitter: "rest",
  *   handler: async (_client, req, res) => {
  *     console.log(`${req.method} ${req.path} ${res.status}`);
  *   },
@@ -66,9 +57,6 @@ export interface SimpleEvent<TEvent extends keyof Events> {
  * @param event - The name of the event to listen for.
  * @param handler - The asynchronous handler function to run when the event is emitted.
  * @param once - If true, the handler will be invoked only once.
- * @param emitter - The emitter to listen on. Use `"rest"` for {@link RestEvents}
- * such as `response`, `rateLimited`, `restDebug`, `invalidRequestWarning`,
- * `hashSweep`, `handlerSweep`. Defaults to `"client"` for {@link ClientEvents}
  * @returns A typed event object.
  */
 export const createEvent = <TEvent extends keyof Events>(
