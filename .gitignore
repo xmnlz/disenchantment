@@ -1,4 +1,4 @@
-# dependencies 
+# dependencies
 node_modules
 
 # output
@@ -10,23 +10,18 @@ dist
 coverage
 *.lcov
 
-# logs
 logs
 _.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
-# dotenv environment variable files
+.direnv
 .env
 .env.test.local
 .env.local
 
-# caches
 .eslintcache
 .cache
 *.tsbuildinfo
 
-# IntelliJ based IDEs
 .idea
 
-# Finder (MacOS) folder config
 .DS_Store
