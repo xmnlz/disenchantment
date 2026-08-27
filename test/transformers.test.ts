@@ -1,6 +1,11 @@
 import { describe, expect, mock, test } from "bun:test";
-import { ApplicationCommandOptionType, LocalizationMap } from "discord.js";
+import {
+  ApplicationCommandOptionType,
+  LocalizationMap,
+  RESTEvents,
+} from "discord.js";
 import { createCommand } from "../src/command";
+import { isRestEvent } from "../src/event";
 import { group } from "../src/group";
 import { option } from "../src/option";
 
@@ -485,9 +490,14 @@ describe("createEventHandlerMap()", () => {
       { event: "response", handler: handlerA },
       { event: "response", handler: handlerB },
     ]);
-    const client = map.get("ready")!;
-    expect(client.on).toEqual([handlerA, handlerB]);
-    expect(client.once).toEqual([]);
+
+    const gateway = map.get("ready")!;
+    expect(gateway.on).toEqual([handlerA, handlerB]);
+    expect(gateway.once).toEqual([]);
+
+    const rest = map.get("response")!;
+    expect(rest.on).toEqual([handlerA, handlerB]);
+    expect(rest.once).toEqual([]);
   });
 
   test("collects 'once' handlers when flagged", () => {
@@ -497,9 +507,14 @@ describe("createEventHandlerMap()", () => {
       { event: "response", handler: handlerA, once: true },
       { event: "response", handler: handlerB, once: true },
     ]);
-    const client = map.get("ready")!;
-    expect(client.once).toEqual([handlerA, handlerB]);
-    expect(client.on).toEqual([]);
+
+    const gateway = map.get("ready")!;
+    expect(gateway.once).toEqual([handlerA, handlerB]);
+    expect(gateway.on).toEqual([]);
+
+    const rest = map.get("response")!;
+    expect(rest.once).toEqual([handlerA, handlerB]);
+    expect(rest.on).toEqual([]);
   });
 
   test("aggregates mixed 'on' and 'once' handlers for the same event", () => {
@@ -513,8 +528,54 @@ describe("createEventHandlerMap()", () => {
       { event: "response", handler: handlerB },
       { event: "response", handler: handlerA, once: true },
     ]);
-    const client = map.get("ready")!;
-    expect(client.on).toEqual([handlerA, handlerB]);
-    expect(client.once).toEqual([handlerB, handlerA]);
+
+    const gateway = map.get("ready")!;
+    expect(gateway.on).toEqual([handlerA, handlerB]);
+    expect(gateway.once).toEqual([handlerB, handlerA]);
+
+    const rest = map.get("response")!;
+    expect(rest.on).toEqual([handlerA, handlerB]);
+    expect(rest.once).toEqual([handlerB, handlerA]);
+  });
+
+  test("keys gateway and REST events independently", () => {
+    const map = createEventHandlerMap([
+      { event: "ready", handler: handlerA },
+      { event: "response", handler: handlerB },
+      { event: "restDebug", handler: handlerA, once: true },
+      { event: "rateLimited", handler: handlerB },
+    ]);
+
+    expect([...map.keys()]).toEqual([
+      "ready",
+      "response",
+      "restDebug",
+      "rateLimited",
+    ]);
+    expect(map.get("restDebug")!.once).toEqual([handlerA]);
+    expect(map.get("rateLimited")!.on).toEqual([handlerB]);
+  });
+});
+
+describe("isRestEvent()", () => {
+  test("identifies every REST event name", () => {
+    for (const name of Object.values(RESTEvents)) {
+      expect(isRestEvent(name)).toBe(true);
+    }
+  });
+
+  test("rejects gateway event names", () => {
+    for (const name of [
+      "ready",
+      "debug",
+      "warn",
+      "error",
+      "cacheSweep",
+      "messageCreate",
+      "interactionCreate",
+      "invalidated",
+    ] as const) {
+      expect(isRestEvent(name)).toBe(false);
+    }
   });
 });
