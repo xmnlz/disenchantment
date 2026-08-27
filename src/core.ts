@@ -144,7 +144,7 @@ export async function createBot({
 export const initApplicationCommands = async (
   client: Client,
   guildIds?: string[],
-) => {
+): Promise<void> => {
   const restCommands = MetadataStorage.instance.commandJsonBodies;
 
   if (guildIds && guildIds.length > 0) {
