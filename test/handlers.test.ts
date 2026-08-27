@@ -11,7 +11,7 @@ import {
 import { createCommand } from "../src/command";
 import { GuardFn } from "../src/guard";
 import {
-  bindClientEventHandlers,
+  bindEventHandlers,
   buildCommandKey,
   extractCommandOptions,
   handleCommandInteraction,
@@ -279,7 +279,32 @@ describe("handleCommandInteraction()", () => {
   });
 });
 
-describe("bindClientEventHandlers()", () => {
+type Registration = { evt: string; fn: (...args: any[]) => void };
+
+/** Lets a handler's rejection propagate through the `.catch` wrapper. */
+const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+const createEmitterSpy = () => {
+  const clientOn: Registration[] = [];
+  const clientOnce: Registration[] = [];
+  const restOn: Registration[] = [];
+  const restOnce: Registration[] = [];
+  const emitted: Array<{ evt: string; args: unknown[] }> = [];
+
+  const client = {
+    on: (evt: string, fn: Registration["fn"]) => clientOn.push({ evt, fn }),
+    once: (evt: string, fn: Registration["fn"]) => clientOnce.push({ evt, fn }),
+    emit: (evt: string, ...args: unknown[]) => emitted.push({ evt, args }),
+    rest: {
+      on: (evt: string, fn: Registration["fn"]) => restOn.push({ evt, fn }),
+      once: (evt: string, fn: Registration["fn"]) => restOnce.push({ evt, fn }),
+    },
+  } as unknown as Client;
+
+  return { client, clientOn, clientOnce, restOn, restOnce, emitted };
+};
+
+describe("bindEventHandlers()", () => {
   test("registers on and once handlers", () => {
     const recorded: string[] = [];
     const eventMap = new Map<string, { on: Function[]; once: Function[] }>([
@@ -299,7 +324,7 @@ describe("bindClientEventHandlers()", () => {
       once: (evt: string, fn: Function) => onceCalls.push({ evt, fn }),
     } as unknown as Client;
 
-    bindClientEventHandlers(fakeClient, eventMap as any);
+    bindEventHandlers(fakeClient, eventMap as any);
     expect(onCalls).toHaveLength(1);
     expect(onceCalls).toHaveLength(1);
     expect(onCalls[0].evt).toBe("E");
@@ -322,11 +347,117 @@ describe("bindClientEventHandlers()", () => {
       },
     } as unknown as Client;
 
-    bindClientEventHandlers(
+    bindEventHandlers(
       fakeClient,
       new Map([["threadDelete", { on: [], once: [] }]]),
     );
     expect(onCount).toBe(0);
     expect(onceCount).toBe(0);
+  });
+
+  test("binds REST events to client.rest and gateway events to client", () => {
+    const spy = createEmitterSpy();
+    const handler = async () => {};
+
+    bindEventHandlers(
+      spy.client,
+      new Map([
+        ["ready", { on: [handler], once: [handler] }],
+        ["response", { on: [handler], once: [handler] }],
+        ["restDebug", { on: [handler], once: [] }],
+        ["messageCreate", { on: [], once: [handler] }],
+      ]) as any,
+    );
+
+    expect(spy.clientOn.map((c) => c.evt)).toEqual(["ready"]);
+    expect(spy.clientOnce.map((c) => c.evt)).toEqual([
+      "ready",
+      "messageCreate",
+    ]);
+    expect(spy.restOn.map((c) => c.evt)).toEqual(["response", "restDebug"]);
+    expect(spy.restOnce.map((c) => c.evt)).toEqual(["response"]);
+  });
+
+  test("invokes REST handlers with the client and the emitted arguments", async () => {
+    const spy = createEmitterSpy();
+    const seen: unknown[] = [];
+
+    bindEventHandlers(
+      spy.client,
+      new Map([
+        [
+          "response",
+          {
+            on: [
+              async (c: Client, request: unknown, response: unknown) => {
+                seen.push(c, request, response);
+              },
+            ],
+            once: [],
+          },
+        ],
+      ]) as any,
+    );
+
+    const request = { method: "GET", path: "/users/@me" };
+    const response = { status: 200 };
+    spy.restOn[0].fn(request, response);
+
+    expect(seen).toEqual([spy.client, request, response]);
+  });
+
+  test("routes a rejected handler to the client's error event", async () => {
+    const spy = createEmitterSpy();
+    const boom = new Error("boom");
+
+    bindEventHandlers(
+      spy.client,
+      new Map([
+        ["response", { on: [async () => Promise.reject(boom)], once: [] }],
+      ]) as any,
+    );
+
+    spy.restOn[0].fn();
+    await flushMicrotasks();
+
+    expect(spy.emitted).toEqual([{ evt: "error", args: [boom] }]);
+  });
+
+  test("wraps a non-Error rejection before emitting", async () => {
+    const spy = createEmitterSpy();
+
+    bindEventHandlers(
+      spy.client,
+      new Map([
+        ["ready", { on: [async () => Promise.reject("nope")], once: [] }],
+      ]) as any,
+    );
+
+    spy.clientOn[0].fn();
+    await flushMicrotasks();
+
+    expect(spy.emitted).toHaveLength(1);
+    const [emitted] = spy.emitted;
+    expect(emitted.evt).toBe("error");
+    expect(emitted.args[0]).toBeInstanceOf(Error);
+    expect((emitted.args[0] as Error).message).toBe("nope");
+  });
+
+  test("tolerates a synchronous handler that returns no promise", () => {
+    const spy = createEmitterSpy();
+    const seen: number[] = [];
+
+    bindEventHandlers(
+      spy.client,
+      new Map([
+        [
+          "response",
+          { on: [(_c: Client, v: number) => seen.push(v)], once: [] },
+        ],
+      ]) as any,
+    );
+
+    expect(() => spy.restOn[0].fn(7)).not.toThrow();
+    expect(seen).toEqual([7]);
   });
 });

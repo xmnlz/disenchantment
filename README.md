@@ -41,7 +41,7 @@
 - **Middleware-Style Guards**  
   Attach guard functions to commands for permissions, cooldowns, rate limits, or custom logic.  
 - **Concise Event Maps**  
-  Wire up any Discord.js event `ready`, `messageCreate`, `guildMemberAdd`, etc. in one place.  
+  Wire up any Discord.js gateway event `ready`, `messageCreate`, `guildMemberAdd`, or REST event `response`, `rateLimited`, etc. in one place.  
 - **Auto-Registration**  
   Serialize and deploy your slash commands to the Discord API with a single async call.  
 - **One-Call Bootstrap**  
@@ -207,6 +207,15 @@ const mathGroup = group("math", "Mathematical operations", [addCommand], {
   },
 });
 
+// Define an event handler for a REST event - the event name alone routes this
+// to `client.rest`, no extra configuration needed
+const responseEvent = createEvent({
+  event: "response",
+  handler: async (_client, request, response) => {
+    console.log(`${request.method} ${request.path} ${response.status}`);
+  },
+});
+
 // Define an event handler for interactions
 const interactionCreateEvent = createEvent({
   event: "interactionCreate",
@@ -237,7 +246,7 @@ const readyEvent = createEvent({
       intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages], // Specify required intents
     },
     commands: [pingCommand, mathGroup, secretCommand], // Include all your commands and groups
-    events: [readyEvent, interactionCreateEvent], // Include all your event handlers
+    events: [readyEvent, interactionCreateEvent, responseEvent], // Include all your event handlers
   });
 
   // Login to Discord - ensure BOT_TOKEN is set in your environment variables

@@ -4,7 +4,9 @@ import {
   type Client,
   type ClientEvents,
   type InteractionContextType,
+  type RestEvents,
 } from "discord.js";
+import { isRestEvent } from "./event.js";
 import { composeGuards } from "./guard.js";
 import { MetadataStorage } from "./metadata-storage.js";
 import type {
@@ -13,7 +15,7 @@ import type {
   OptionValue,
   ValidCommandOptions,
 } from "./option.js";
-import type { EventHanlderMap } from "./transformers/events.js";
+import type { EventHandlerMap } from "./transformers/events.js";
 
 const optionExtractors: Record<
   ValidCommandOptions,
@@ -103,25 +105,55 @@ export const handleCommandInteraction = async (
   );
 };
 
-export const bindClientEventHandlers = (
+/**
+ * Surfaces a rejected handler on the client's `error` event instead of letting
+ * it become an opaque unhandled rejection. When nothing is listening for
+ * `error`, discord.js rethrows, preserving the previous crash behaviour.
+ *
+ * `Promise.resolve` guards the untyped edge: handlers are declared async, but
+ * plain JS consumers can still hand us a synchronous function.
+ */
+const settleHandler = (client: Client, result: Promise<void>): void => {
+  void Promise.resolve(result).catch((error: unknown) => {
+    client.emit(
+      "error",
+      error instanceof Error ? error : new Error(String(error)),
+    );
+  });
+};
+
+export const bindEventHandlers = (
   client: Client,
-  eventMap: EventHanlderMap,
+  eventMap: EventHandlerMap,
 ): void => {
   for (const [eventName, { on, once }] of eventMap) {
-    for (const handler of on) {
-      client.on(
-        eventName,
-        async (...args: ClientEvents[typeof eventName]) =>
-          await handler(client, ...args),
-      );
-    }
+    // The event name alone decides the emitter: REST events are emitted by
+    // `client.rest`, gateway events by `client` itself. The branch also narrows
+    // `eventName` so each emitter sees only the names it accepts.
+    if (isRestEvent(eventName)) {
+      for (const handler of on) {
+        client.rest.on(eventName, (...args: RestEvents[typeof eventName]) =>
+          settleHandler(client, handler(client, ...args)),
+        );
+      }
 
-    for (const handler of once) {
-      client.once(
-        eventName,
-        async (...args: ClientEvents[typeof eventName]) =>
-          await handler(client, ...args),
-      );
+      for (const handler of once) {
+        client.rest.once(eventName, (...args: RestEvents[typeof eventName]) =>
+          settleHandler(client, handler(client, ...args)),
+        );
+      }
+    } else {
+      for (const handler of on) {
+        client.on(eventName, (...args: ClientEvents[typeof eventName]) =>
+          settleHandler(client, handler(client, ...args)),
+        );
+      }
+
+      for (const handler of once) {
+        client.once(eventName, (...args: ClientEvents[typeof eventName]) =>
+          settleHandler(client, handler(client, ...args)),
+        );
+      }
     }
   }
 };

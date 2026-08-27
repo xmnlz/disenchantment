@@ -1,18 +1,17 @@
-import type { ClientEvents } from "discord.js";
-import type { EventHandler, SimpleEvent } from "../event";
+import type { DiscordEvents, EventHandler, SimpleEvent } from "../event.js";
 
-export type EventHanlderMap = Map<
-  keyof ClientEvents,
+export type EventHandlerMap = Map<
+  keyof DiscordEvents,
   {
-    once: EventHandler<keyof ClientEvents>[];
-    on: EventHandler<keyof ClientEvents>[];
+    once: EventHandler<keyof DiscordEvents>[];
+    on: EventHandler<keyof DiscordEvents>[];
   }
 >;
 
 export const createEventHandlerMap = (
-  events: SimpleEvent<keyof ClientEvents>[],
-): EventHanlderMap => {
-  const map: EventHanlderMap = new Map();
+  events: SimpleEvent<keyof DiscordEvents>[],
+): EventHandlerMap => {
+  const map: EventHandlerMap = new Map();
 
   for (const { event, handler, once } of events) {
     const record = map.get(event) || { once: [], on: [] };
