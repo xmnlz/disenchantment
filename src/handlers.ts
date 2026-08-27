@@ -14,7 +14,7 @@ import type {
   OptionValue,
   ValidCommandOptions,
 } from "./option.js";
-import { isRestEvent, type EventHandlerMap } from "./transformers/events.js";
+import { type EventHandlerMap, isRestEvent } from "./transformers/events.js";
 
 const optionExtractors: Record<
   ValidCommandOptions,

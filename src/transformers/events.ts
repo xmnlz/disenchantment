@@ -1,5 +1,5 @@
-import { RESTEvents, type ClientEvents, type RestEvents } from "discord.js";
-import type { EventHandler, SimpleEvent, Events } from "../event";
+import { type ClientEvents, RESTEvents, type RestEvents } from "discord.js";
+import type { EventHandler, Events, SimpleEvent } from "../event";
 
 export type EventHandlerMap = Map<
   keyof ClientEvents | keyof RestEvents,
