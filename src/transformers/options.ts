@@ -41,9 +41,6 @@ function applyCommon<
  * Adds one option to a slash command or subcommand builder, applying whichever
  * type-specific constraints its `extra` carries.
  *
- * Bounds (`minLength`, `maxLength`, `minValue`, `maxValue`) are applied only
- * when truthy, so a bound of `0` is not forwarded to Discord.
- *
  * @param builder - The command or subcommand builder to add the option to.
  * @param opt - The option definition.
  * @throws If the option declares a type Discord has no builder method for.
@@ -57,8 +54,8 @@ export function applyOption(builder: Builder, opt: Options) {
         if (opt.extra) {
           const { minLength, maxLength, choices, autocomplete } = opt.extra;
 
-          if (minLength) o.setMinLength(minLength);
-          if (maxLength) o.setMaxLength(maxLength);
+          if (minLength !== undefined) o.setMinLength(minLength);
+          if (maxLength !== undefined) o.setMaxLength(maxLength);
 
           if (choices) {
             const apiChoices = choices.map((choice) => ({
@@ -84,8 +81,8 @@ export function applyOption(builder: Builder, opt: Options) {
         if (opt.extra) {
           const { minValue, maxValue, choices, autocomplete } = opt.extra;
 
-          if (minValue) o.setMinValue(minValue);
-          if (maxValue) o.setMaxValue(maxValue);
+          if (minValue !== undefined) o.setMinValue(minValue);
+          if (maxValue !== undefined) o.setMaxValue(maxValue);
 
           if (choices) {
             const apiChoices = choices.map((choice) => ({
@@ -111,8 +108,8 @@ export function applyOption(builder: Builder, opt: Options) {
         if (opt.extra) {
           const { minValue, maxValue, choices, autocomplete } = opt.extra;
 
-          if (minValue) o.setMinValue(minValue);
-          if (maxValue) o.setMaxValue(maxValue);
+          if (minValue !== undefined) o.setMinValue(minValue);
+          if (maxValue !== undefined) o.setMaxValue(maxValue);
 
           if (choices) {
             const apiChoices = choices.map((choice) => ({
