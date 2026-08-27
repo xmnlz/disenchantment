@@ -136,6 +136,81 @@ describe("serializeCommandsForAPI()", () => {
     expect(opt.choices).toEqual([{ name: "One", value: "one" }]);
   });
 
+  test("forwards a zero minLength instead of dropping it", () => {
+    const foo = createCommand({
+      name: "foo",
+      description: "Foo",
+      handler: mock(),
+      options: {
+        bar: option({
+          name: "bar",
+          description: "Bar desc",
+          type: ApplicationCommandOptionType.String,
+          required: false,
+          extra: { minLength: 0, maxLength: 10 },
+        }),
+      },
+    });
+
+    const [json] = serializeCommandsForAPI([foo]);
+    const opt: any = (json.options ?? [])[0];
+    expect(opt.min_length).toBe(0);
+    expect(opt.max_length).toBe(10);
+  });
+
+  test("forwards zero minValue and maxValue on numeric options", () => {
+    const foo = createCommand({
+      name: "foo",
+      description: "Foo",
+      handler: mock(),
+      options: {
+        count: option({
+          name: "count",
+          description: "Count",
+          type: ApplicationCommandOptionType.Integer,
+          required: true,
+          extra: { minValue: 0, maxValue: 0 },
+        }),
+        ratio: option({
+          name: "ratio",
+          description: "Ratio",
+          type: ApplicationCommandOptionType.Number,
+          required: true,
+          extra: { minValue: 0, maxValue: 1 },
+        }),
+      },
+    });
+
+    const [json] = serializeCommandsForAPI([foo]);
+    const [count, ratio]: any[] = json.options ?? [];
+    expect(count.min_value).toBe(0);
+    expect(count.max_value).toBe(0);
+    expect(ratio.min_value).toBe(0);
+    expect(ratio.max_value).toBe(1);
+  });
+
+  test("omits bounds that were never declared", () => {
+    const foo = createCommand({
+      name: "foo",
+      description: "Foo",
+      handler: mock(),
+      options: {
+        bar: option({
+          name: "bar",
+          description: "Bar desc",
+          type: ApplicationCommandOptionType.String,
+          required: false,
+          extra: { maxLength: 4 },
+        }),
+      },
+    });
+
+    const [json] = serializeCommandsForAPI([foo]);
+    const opt: any = (json.options ?? [])[0];
+    expect(opt.min_length).toBeUndefined();
+    expect(opt.max_length).toBe(4);
+  });
+
   test("serializes subcommands under a top-level group", () => {
     const sub = createCommand({
       name: "sub",

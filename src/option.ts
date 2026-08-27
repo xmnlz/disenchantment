@@ -1,5 +1,6 @@
 import {
   ApplicationCommandOptionType,
+  type Attachment,
   type Channel,
   type ChannelType,
   type GuildMember,
@@ -145,9 +146,6 @@ type Option = <
  * | `Channel` | `channelTypes` |
  * | all others | none |
  *
- * Note that the numeric bounds are applied with a truthiness check, so a bound
- * of `0` is dropped rather than sent to Discord.
- *
  * @example
  * ```ts
  * const messageOption = option({
@@ -196,6 +194,7 @@ type OptionTypeMap<TGuildContext extends boolean> = {
   [ApplicationCommandOptionType.Boolean]: boolean;
   [ApplicationCommandOptionType.Number]: number;
   [ApplicationCommandOptionType.Channel]: Channel | VoiceChannel | TextChannel;
+  [ApplicationCommandOptionType.Attachment]: Attachment;
   [ApplicationCommandOptionType.Role]: Role;
   [ApplicationCommandOptionType.Mentionable]: TGuildContext extends true
     ? User | Role | GuildMember
@@ -212,9 +211,7 @@ type OptionTypeMap<TGuildContext extends boolean> = {
  * a `User` option narrows from `User | GuildMember` to `GuildMember`, and
  * `Mentionable` widens to include `GuildMember`.
  *
- * Types absent from the internal map fall back to `unknown`, which is currently
- * the case for `Attachment` — the value arrives intact at runtime, but you must
- * narrow it yourself.
+ * Types absent from the internal map fall back to `unknown`.
  */
 export type OptionValue<
   TOption extends ValidCommandOptions,

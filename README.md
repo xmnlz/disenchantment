@@ -248,7 +248,7 @@ options: {
 | `Role` | `Role` | `Role` |
 | `Mentionable` | `User \| Role` | `User \| Role \| GuildMember` |
 | `Channel` | `Channel \| TextChannel \| VoiceChannel` | unchanged |
-| `Attachment` | `unknown` — see [Gotchas](#-gotchas) | `unknown` |
+| `Attachment` | `Attachment` | `Attachment` |
 
 `Subcommand` and `SubcommandGroup` are not valid option types; use [`group()`](#subcommands--groups) instead. The type system rejects them.
 
@@ -470,19 +470,19 @@ const ready = createEvent({
 });
 ```
 
-For development, register to a single guild instead; guild commands appear immediately.
+For development, register to one or more guilds instead; guild commands appear immediately.
 
 ```ts
 const ready = createEvent({
   event: "ready",
   handler: async (client) => {
     await client.guilds.fetch(); // populate the cache first
-    await initApplicationCommands(client, ["YOUR_GUILD_ID"]);
+    await initApplicationCommands(client, ["GUILD_ONE", "GUILD_TWO"]);
   },
 });
 ```
 
-Guild lookup reads `client.guilds.cache`, so the guild must be cached — hence the `client.guilds.fetch()` call. An uncached ID is reported on the console and skipped.
+Every listed guild is registered. Guild lookup reads `client.guilds.cache`, so the guilds must be cached — hence the `client.guilds.fetch()` call. An uncached ID is reported on the console and skipped without stopping the rest.
 
 > **Note:** registration replaces the full command list for the chosen scope. Commands you remove from your code disappear from Discord on the next run.
 
@@ -536,20 +536,11 @@ Inference works whether or not you set `context`; the flag only unlocks the narr
 
 **Interactions are not routed for you.** `createBot` binds your events, but nothing connects an incoming interaction to a command handler until you call `handleCommandInteraction` from an `interactionCreate` event. Omitting it is the most common reason commands register but never respond.
 
-**`Attachment` options are typed `unknown`.** Every other option type resolves to a concrete discord.js type, but `Attachment` is currently missing from the internal type map. The value is still delivered correctly at runtime — you just need to narrow it yourself:
-
-```ts
-handler: async (interaction: ChatInputCommandInteraction, { file }) => {
-  const attachment = file as Attachment;
-  await interaction.reply(attachment.url);
-}
-```
-
-**`initApplicationCommands` registers to one guild.** When you pass multiple guild IDs, only the first one found in the cache receives the commands. Call it once per guild if you need several.
-
-**Zero is ignored in `extra` bounds.** `minLength`, `maxLength`, `minValue`, and `maxValue` are applied with a truthiness check, so a value of `0` is silently dropped. Use `1` where you can, or omit the bound.
-
 **Guild commands and global commands are separate lists.** Registering to a guild does not clear global commands, so a command can appear twice during development. Register to one scope at a time.
+
+**Guilds must be cached before guild registration.** `initApplicationCommands` resolves IDs against `client.guilds.cache`, so call `await client.guilds.fetch()` first. Uncached IDs are logged and skipped rather than throwing, which makes a typo look like silence.
+
+**One bot per process.** Command data lives in a module-level singleton, so a second `createBot` call replaces the first one's commands instead of adding to them.
 
 ## 🚧 Roadmap (Not Yet Implemented)
 
