@@ -46,6 +46,16 @@ const optionExtractors: Record<
     interaction.options.getAttachment(name, required),
 };
 
+/**
+ * Reads every declared option off an interaction and returns them keyed by the
+ * property names used in the command's `options` record, not by their Discord
+ * option names.
+ *
+ * @param interaction - The interaction to read option values from.
+ * @param options - The command's `options` record.
+ * @returns The resolved arguments, typed from the option definitions.
+ * @throws If an option declares a type with no known extractor.
+ */
 export const extractCommandOptions = <
   TOption extends Record<string, AnyOption>,
   TInteractionContext extends InteractionContextType[],
@@ -71,6 +81,16 @@ export const extractCommandOptions = <
   return args as ExtractArgs<TOption, TInteractionContext>;
 };
 
+/**
+ * Builds the lookup key for an interaction by joining its command, subcommand
+ * group, and subcommand names with spaces — for example `"admin user ban"`.
+ *
+ * This mirrors how `flattenCommandTree` keys the command map, so the two must
+ * stay in step.
+ *
+ * @param interaction - The interaction to derive a key from.
+ * @returns The space-joined invocation path.
+ */
 export const buildCommandKey = (
   interaction: ChatInputCommandInteraction,
 ): string =>
@@ -82,6 +102,31 @@ export const buildCommandKey = (
     .filter(Boolean)
     .join(" ");
 
+/**
+ * Dispatches an incoming interaction to the command it names, running that
+ * command's guards before its handler.
+ *
+ * Nothing calls this for you. `createBot` binds your events, but the step from
+ * "an interaction arrived" to "the right handler runs" is yours to wire, which
+ * keeps you free to filter, log, or short-circuit first:
+ *
+ * @example
+ * ```ts
+ * const interactions = createEvent({
+ *   event: "interactionCreate",
+ *   handler: async (_client, interaction) => {
+ *     if (!interaction.isChatInputCommand()) return;
+ *     await handleCommandInteraction(interaction);
+ *   },
+ * });
+ * ```
+ *
+ * Interactions that match no registered command are ignored silently, so an
+ * unresponsive command usually means it was never registered rather than that
+ * dispatch failed.
+ *
+ * @param interaction - A chat input interaction to dispatch.
+ */
 export const handleCommandInteraction = async (
   interaction: ChatInputCommandInteraction,
 ): Promise<void> => {
@@ -122,6 +167,15 @@ const settleHandler = (client: Client, result: Promise<void>): void => {
   });
 };
 
+/**
+ * Attaches every handler in the map to the emitter its event belongs to, using
+ * `on` or `once` as declared.
+ *
+ * Called for you by `createBot`; you should not need it directly.
+ *
+ * @param client - The client to bind against.
+ * @param eventMap - Handlers grouped by event name.
+ */
 export const bindEventHandlers = (
   client: Client,
   eventMap: EventHandlerMap,

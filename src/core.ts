@@ -36,7 +36,12 @@ export interface BotOptions {
   /**
    * Event handlers to bind to the Discord client.
    *
-   * Useful for reacting to bot lifecycle events like `ready`, `messageCreate`, etc.
+   * Covers gateway events like `ready` and `messageCreate`, and REST events
+   * like `response` and `rateLimited`, which are bound to `client.rest`.
+   *
+   * Typed as `SimpleEvent<any>[]` so that handlers for different events can sit
+   * in one array. Each handler keeps the types `createEvent` gave it, so define
+   * them with `createEvent` rather than as bare object literals.
    *
    * @example
    * ```ts
@@ -65,12 +70,17 @@ export interface BotOptions {
  *
  * This function prepares the client for login but does not connect to Discord — call `client.login()` separately.
  *
+ * Binding events is all this does for you at runtime. It does **not** route
+ * interactions to your command handlers — for that, call
+ * `handleCommandInteraction` from an `interactionCreate` event. Nor does it
+ * register commands with Discord; see {@link initApplicationCommands}.
+ *
  * @example
  * ```ts
  * const client = await createBot({
  *   clientOptions: { intents: [GatewayIntentBits.Guilds] },
  *   commands: [pingCommand],
- *   events: [readyEvent],
+ *   events: [readyEvent, interactionCreateEvent],
  * });
  *
  * await client.login(process.env.DISCORD_TOKEN);
@@ -78,6 +88,7 @@ export interface BotOptions {
  *
  * @param options - The complete setup configuration for the bot.
  * @returns A Discord.js `Client` ready to be logged in.
+ * @throws If two commands resolve to the same invocation path.
  */
 export async function createBot({
   clientOptions,
@@ -99,22 +110,38 @@ export async function createBot({
 }
 
 /**
- * Registers your application's slash commands.
+ * Publishes your application's slash commands to Discord.
  *
- * Use this after the bot is fully configured and the client is ready.
- * You can register globally or to specific guilds for faster propagation during development.
+ * Defining commands does not register them; this is the call that sends them.
+ * Run it once the client is ready. Registering globally can take up to an hour
+ * to propagate, so during development prefer a guild, where commands appear
+ * immediately.
+ *
+ * Registration **replaces** the whole command list for the scope it targets, so
+ * commands deleted from your code disappear from Discord on the next run.
+ * Guild and global commands are separate lists: registering to a guild leaves
+ * global commands in place, which is why a command can appear twice while you
+ * are developing.
  *
  * @example
  * ```ts
- * // Register globally (may take up to 1 hour to propagate)
+ * // Global — available everywhere, may take up to an hour to propagate.
  * await initApplicationCommands(client);
+ * ```
  *
- * // Register instantly to specific test guilds
+ * @example
+ * ```ts
+ * // Guild-scoped — appears immediately. The guild must be cached first.
+ * await client.guilds.fetch();
  * await initApplicationCommands(client, ["123456789012345678"]);
  * ```
  *
  * @param client - An initialized Discord.js client.
- * @param guildIds - Optional array of guild IDs for targeted registration. If omitted, registers globally.
+ * @param guildIds - Guild IDs to target. Resolved against `client.guilds.cache`,
+ *   so fetch guilds first; IDs missing from the cache are logged and skipped.
+ *   Note that registration stops at the first ID found in the cache, so this
+ *   registers to a single guild rather than to all of them. Omit to register
+ *   globally.
  */
 export const initApplicationCommands = async (
   client: Client,

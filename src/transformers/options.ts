@@ -37,6 +37,17 @@ function applyCommon<
   return option;
 }
 
+/**
+ * Adds one option to a slash command or subcommand builder, applying whichever
+ * type-specific constraints its `extra` carries.
+ *
+ * Bounds (`minLength`, `maxLength`, `minValue`, `maxValue`) are applied only
+ * when truthy, so a bound of `0` is not forwarded to Discord.
+ *
+ * @param builder - The command or subcommand builder to add the option to.
+ * @param opt - The option definition.
+ * @throws If the option declares a type Discord has no builder method for.
+ */
 export function applyOption(builder: Builder, opt: Options) {
   switch (opt.type) {
     case ApplicationCommandOptionType.String: {

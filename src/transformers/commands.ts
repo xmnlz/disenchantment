@@ -9,6 +9,18 @@ import type { SubcommandGroup } from "../group";
 import type { Options } from "../option";
 import { applyOption } from "./options";
 
+/**
+ * Flattens a command tree into a lookup map keyed by invocation path.
+ *
+ * Groups contribute their name to the path but no entry of their own, so
+ * `group("admin", …, [group("user", …, [ban])])` yields the single key
+ * `"admin user ban"` — the same string `buildCommandKey` derives from an
+ * interaction.
+ *
+ * @param commands - Top-level commands and groups.
+ * @returns Every leaf command, keyed by its full path.
+ * @throws If two commands resolve to the same path.
+ */
 export function flattenCommandTree(
   commands: CommandOrCommandGroup[],
 ): Map<string, AnySimpleCommand> {
@@ -35,6 +47,16 @@ export function flattenCommandTree(
   return map;
 }
 
+/**
+ * Converts commands and groups into the JSON bodies Discord's API expects.
+ *
+ * Each top-level entry becomes one application command; nested groups become
+ * subcommand groups and subcommands, matching Discord's limit of two levels of
+ * nesting.
+ *
+ * @param items - Top-level commands and groups.
+ * @returns One request body per top-level command.
+ */
 export const serializeCommandsForAPI = (
   items: CommandOrCommandGroup[],
 ): RESTPostAPIChatInputApplicationCommandsJSONBody[] => {
