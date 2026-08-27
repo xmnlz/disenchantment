@@ -127,6 +127,27 @@ type Option = <
 /**
  * Creates a typed option for use inside a command definition.
  *
+ * Options are collected in a record on the command; the record's **keys** become
+ * the property names on the handler's `args`, while `name` is what Discord shows
+ * the user. Keeping the two the same is clearest, but they may differ.
+ *
+ * `required` has no default and must be given explicitly. It decides whether the
+ * argument is typed `T` or `T | undefined`, so leaving it implicit would quietly
+ * weaken inference.
+ *
+ * `extra` is typed per option type — fields that do not apply to the chosen type
+ * are a compile error:
+ *
+ * | Option type | Available `extra` fields |
+ * | --- | --- |
+ * | `String` | `minLength`, `maxLength`, `choices`, `autocomplete` |
+ * | `Integer`, `Number` | `minValue`, `maxValue`, `choices`, `autocomplete` |
+ * | `Channel` | `channelTypes` |
+ * | all others | none |
+ *
+ * Note that the numeric bounds are applied with a truthiness check, so a bound
+ * of `0` is dropped rather than sent to Discord.
+ *
  * @example
  * ```ts
  * const messageOption = option({
@@ -140,9 +161,27 @@ type Option = <
  * });
  * ```
  *
+ * @example Choices, with a localized label and a stable value:
+ * ```ts
+ * const mode = option({
+ *   name: "mode",
+ *   description: "Playback mode",
+ *   type: ApplicationCommandOptionType.String,
+ *   required: false,
+ *   extra: {
+ *     choices: [
+ *       { name: "Repeat", nameLocalizations: { fr: "répéter" }, value: "repeat" },
+ *       { name: "Shuffle", value: "shuffle" },
+ *     ],
+ *   },
+ * });
+ * ```
+ *
  * @param options - A fully typed option object with name, type, description, requirement flag,
  *                  and any additional constraints (`extra`).
  * @returns The same object, with its types preserved for downstream inference.
+ *
+ * @see {@link OptionValue} for how each option type maps to a handler argument type.
  */
 export const option: Option = (options) => {
   return options;
@@ -166,6 +205,17 @@ type OptionTypeMap<TGuildContext extends boolean> = {
     : User | GuildMember;
 };
 
+/**
+ * Resolves one option type to the value a handler receives for it.
+ *
+ * A command's `context` sharpens the result: with `InteractionContextType.Guild`
+ * a `User` option narrows from `User | GuildMember` to `GuildMember`, and
+ * `Mentionable` widens to include `GuildMember`.
+ *
+ * Types absent from the internal map fall back to `unknown`, which is currently
+ * the case for `Attachment` — the value arrives intact at runtime, but you must
+ * narrow it yourself.
+ */
 export type OptionValue<
   TOption extends ValidCommandOptions,
   TInteractionContext extends InteractionContextType[],
@@ -173,6 +223,12 @@ export type OptionValue<
   ? OptionTypeMap<IncludesGuild<TInteractionContext>>[TOption]
   : unknown;
 
+/**
+ * Maps a command's `options` record to the `args` object its handler receives.
+ *
+ * Keys are carried over unchanged; each value is resolved through
+ * {@link OptionValue}, and options declared `required: false` gain `| undefined`.
+ */
 export type ExtractArgs<
   TOptions extends Record<string, AnyOption>,
   TInteractionContext extends InteractionContextType[],
