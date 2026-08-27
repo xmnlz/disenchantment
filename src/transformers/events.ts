@@ -1,55 +1,28 @@
-import { type ClientEvents, RESTEvents, type RestEvents } from "discord.js";
-import type { EventHandler, Events, SimpleEvent } from "../event";
+import type { DiscordEvents, EventHandler, SimpleEvent } from "../event.js";
 
 export type EventHandlerMap = Map<
-  keyof ClientEvents | keyof RestEvents,
+  keyof DiscordEvents,
   {
-    once: EventHandler<keyof ClientEvents | keyof RestEvents>[];
-    on: EventHandler<keyof ClientEvents | keyof RestEvents>[];
+    once: EventHandler<keyof DiscordEvents>[];
+    on: EventHandler<keyof DiscordEvents>[];
   }
 >;
 
-export const isRestEvent = (
-  event: keyof ClientEvents | keyof RestEvents,
-): event is keyof RestEvents => {
-  return Object.values(RESTEvents).some(
-    (re) => re === (event as keyof RestEvents),
-  );
-};
-
 export const createEventHandlerMap = (
-  events: SimpleEvent<keyof Events>[],
+  events: SimpleEvent<keyof DiscordEvents>[],
 ): EventHandlerMap => {
   const map: EventHandlerMap = new Map();
 
   for (const { event, handler, once } of events) {
-    if (isRestEvent(event)) {
-      const record = map.get(event) || {
-        once: [],
-        on: [],
-      };
+    const record = map.get(event) || { once: [], on: [] };
 
-      if (once) {
-        record.once.push(handler);
-      } else {
-        record.on.push(handler);
-      }
-
-      map.set(event, record);
+    if (once) {
+      record.once.push(handler);
     } else {
-      const record = map.get(event) || {
-        once: [],
-        on: [],
-      };
-
-      if (once) {
-        record.once.push(handler);
-      } else {
-        record.on.push(handler);
-      }
-
-      map.set(event, record);
+      record.on.push(handler);
     }
+
+    map.set(event, record);
   }
 
   return map;

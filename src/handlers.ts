@@ -6,6 +6,7 @@ import {
   type InteractionContextType,
   type RestEvents,
 } from "discord.js";
+import { isRestEvent } from "./event.js";
 import { composeGuards } from "./guard.js";
 import { MetadataStorage } from "./metadata-storage.js";
 import type {
@@ -14,7 +15,7 @@ import type {
   OptionValue,
   ValidCommandOptions,
 } from "./option.js";
-import { type EventHandlerMap, isRestEvent } from "./transformers/events.js";
+import type { EventHandlerMap } from "./transformers/events.js";
 
 const optionExtractors: Record<
   ValidCommandOptions,
@@ -109,6 +110,9 @@ export const bindEventHandlers = (
   eventMap: EventHandlerMap,
 ): void => {
   for (const [eventName, { on, once }] of eventMap) {
+    // The event name alone decides the emitter: REST events are emitted by
+    // `client.rest`, gateway events by `client` itself. The branch also narrows
+    // `eventName` so each emitter sees only the names it accepts.
     if (isRestEvent(eventName)) {
       for (const handler of on) {
         client.rest.on(
