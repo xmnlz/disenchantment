@@ -112,7 +112,7 @@ describe("initApplicationCommands()", () => {
     expect(setGlobal).toHaveBeenCalledWith(restCommands);
   });
 
-  test("registers to the first matching guild", async () => {
+  test("registers to a matching guild", async () => {
     const setGuild = mock().mockResolvedValue(undefined);
     const guild = { commands: { set: setGuild } } as any;
 
@@ -154,13 +154,13 @@ describe("initApplicationCommands()", () => {
     }
   });
 
-  test("returns after first successful guild registration", async () => {
-    let calls = 0;
-    const makeGuild = () =>
+  test("registers to every matching guild", async () => {
+    const registered: string[] = [];
+    const makeGuild = (id: string) =>
       ({
         commands: {
           set: mock().mockImplementation(() => {
-            calls++;
+            registered.push(id);
             return Promise.resolve();
           }),
         },
@@ -170,13 +170,61 @@ describe("initApplicationCommands()", () => {
       application: { commands: { set: mock() } },
       guilds: {
         cache: new Map<string, any>([
-          ["one", makeGuild()],
-          ["two", makeGuild()],
+          ["one", makeGuild("one")],
+          ["two", makeGuild("two")],
+          ["three", makeGuild("three")],
         ]),
       },
     } as any;
 
-    await initApplicationCommands(client, ["one", "two"]);
-    expect(calls).toBe(1);
+    await initApplicationCommands(client, ["one", "two", "three"]);
+    expect(registered).toEqual(["one", "two", "three"]);
+  });
+
+  test("registers to the known guilds even when an unknown ID comes first", async () => {
+    const registered: string[] = [];
+    const makeGuild = (id: string) =>
+      ({
+        commands: {
+          set: mock().mockImplementation(() => {
+            registered.push(id);
+            return Promise.resolve();
+          }),
+        },
+      }) as any;
+
+    const client = {
+      application: { commands: { set: mock() } },
+      guilds: {
+        cache: new Map<string, any>([
+          ["one", makeGuild("one")],
+          ["two", makeGuild("two")],
+        ]),
+      },
+    } as any;
+
+    const originalLog = console.log;
+    console.log = mock();
+
+    try {
+      await initApplicationCommands(client, ["missing", "one", "two"]);
+      expect(registered).toEqual(["one", "two"]);
+    } finally {
+      console.log = originalLog;
+    }
+  });
+
+  test("does not touch global commands when guildIds are given", async () => {
+    const setGlobal = mock().mockResolvedValue(undefined);
+    const setGuild = mock().mockResolvedValue(undefined);
+
+    const client = {
+      application: { commands: { set: setGlobal } },
+      guilds: { cache: new Map([["123", { commands: { set: setGuild } }]]) },
+    } as any;
+
+    await initApplicationCommands(client, ["123"]);
+    expect(setGuild).toHaveBeenCalledTimes(1);
+    expect(setGlobal).not.toHaveBeenCalled();
   });
 });

@@ -137,11 +137,9 @@ export async function createBot({
  * ```
  *
  * @param client - An initialized Discord.js client.
- * @param guildIds - Guild IDs to target. Resolved against `client.guilds.cache`,
- *   so fetch guilds first; IDs missing from the cache are logged and skipped.
- *   Note that registration stops at the first ID found in the cache, so this
- *   registers to a single guild rather than to all of them. Omit to register
- *   globally.
+ * @param guildIds - Guild IDs to target. Each is resolved against
+ *   `client.guilds.cache`, so fetch guilds first; IDs missing from the cache
+ *   are logged and skipped without stopping the rest. Omit to register globally.
  */
 export const initApplicationCommands = async (
   client: Client,
@@ -152,13 +150,15 @@ export const initApplicationCommands = async (
   if (guildIds && guildIds.length > 0) {
     for (const guildId of guildIds) {
       const guild = client.guilds.cache.get(guildId);
-      if (guild) {
-        await guild.commands.set(restCommands);
-        return;
+
+      if (!guild) {
+        console.log(
+          `Guild with ID ${guildId} could not be found in the client cache.`,
+        );
+        continue;
       }
-      console.log(
-        `Guild with ID ${guildId} could not be found in the client cache.`,
-      );
+
+      await guild.commands.set(restCommands);
     }
   } else {
     await client.application?.commands.set(restCommands);
