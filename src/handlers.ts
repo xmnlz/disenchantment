@@ -105,6 +105,23 @@ export const handleCommandInteraction = async (
   );
 };
 
+/**
+ * Surfaces a rejected handler on the client's `error` event instead of letting
+ * it become an opaque unhandled rejection. When nothing is listening for
+ * `error`, discord.js rethrows, preserving the previous crash behaviour.
+ *
+ * `Promise.resolve` guards the untyped edge: handlers are declared async, but
+ * plain JS consumers can still hand us a synchronous function.
+ */
+const settleHandler = (client: Client, result: Promise<void>): void => {
+  void Promise.resolve(result).catch((error: unknown) => {
+    client.emit(
+      "error",
+      error instanceof Error ? error : new Error(String(error)),
+    );
+  });
+};
+
 export const bindEventHandlers = (
   client: Client,
   eventMap: EventHandlerMap,
@@ -115,34 +132,26 @@ export const bindEventHandlers = (
     // `eventName` so each emitter sees only the names it accepts.
     if (isRestEvent(eventName)) {
       for (const handler of on) {
-        client.rest.on(
-          eventName,
-          async (...args: RestEvents[typeof eventName]) =>
-            await handler(client, ...args),
+        client.rest.on(eventName, (...args: RestEvents[typeof eventName]) =>
+          settleHandler(client, handler(client, ...args)),
         );
       }
 
       for (const handler of once) {
-        client.rest.once(
-          eventName,
-          async (...args: RestEvents[typeof eventName]) =>
-            await handler(client, ...args),
+        client.rest.once(eventName, (...args: RestEvents[typeof eventName]) =>
+          settleHandler(client, handler(client, ...args)),
         );
       }
     } else {
       for (const handler of on) {
-        client.on(
-          eventName,
-          async (...args: ClientEvents[typeof eventName]) =>
-            await handler(client, ...args),
+        client.on(eventName, (...args: ClientEvents[typeof eventName]) =>
+          settleHandler(client, handler(client, ...args)),
         );
       }
 
       for (const handler of once) {
-        client.once(
-          eventName,
-          async (...args: ClientEvents[typeof eventName]) =>
-            await handler(client, ...args),
+        client.once(eventName, (...args: ClientEvents[typeof eventName]) =>
+          settleHandler(client, handler(client, ...args)),
         );
       }
     }
