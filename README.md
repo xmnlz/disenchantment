@@ -35,15 +35,15 @@
 ## ⚙️ Features
 
 - **Object-based Slash Commands**  
-  Define commands & nested subcommands with plain TypeScript objects.
+  Define commands & nested subcommands with plain TypeScript objects.  
 - **Type-Safe Options**  
-  Leverage built-in helpers to declare option types, descriptions, defaults, and validations.
+  Leverage built-in helpers to declare option types, descriptions, defaults, and validations.  
 - **Middleware-Style Guards**  
-  Attach guard functions to commands for permissions, cooldowns, rate limits, or custom logic.
+  Attach guard functions to commands for permissions, cooldowns, rate limits, or custom logic.  
 - **Concise Event Maps**  
-  Wire up any Discord.js event `ready`, `messageCreate`, `guildMemberAdd`, etc. in one place.
+  Wire up any Discord.js gateway event `ready`, `messageCreate`, `guildMemberAdd`, or REST event `response`, `rateLimited`, etc. in one place.  
 - **Auto-Registration**  
-  Serialize and deploy your slash commands to the Discord API with a single async call.
+  Serialize and deploy your slash commands to the Discord API with a single async call.  
 - **One-Call Bootstrap**  
   Spin up your entire bot-client, commands, events, registration-in one `createBot({ … })` invocation.
 
@@ -207,10 +207,10 @@ const mathGroup = group("math", "Mathematical operations", [addCommand], {
   },
 });
 
-// Define an event handler for rest event responses
+// Define an event handler for a REST event - the event name alone routes this
+// to `client.rest`, no extra configuration needed
 const responseEvent = createEvent({
   event: "response",
-  emitter: "rest",
   handler: async (_client, request, response) => {
     console.log(`${request.method} ${request.path} ${response.status}`);
   },
@@ -246,7 +246,7 @@ const readyEvent = createEvent({
       intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages], // Specify required intents
     },
     commands: [pingCommand, mathGroup, secretCommand], // Include all your commands and groups
-    events: [readyEvent, interactionCreateEvent], // Include all your event handlers
+    events: [readyEvent, interactionCreateEvent, responseEvent], // Include all your event handlers
   });
 
   // Login to Discord - ensure BOT_TOKEN is set in your environment variables
@@ -256,11 +256,12 @@ const readyEvent = createEvent({
 
 ## ✍️ Contributing
 
-1. Fork the repo & create a feature branch.
-2. Write clear, focused commits—one logical change per commit.
-3. Open a pull request with a description of what you’ve changed and why.
+1. Fork the repo & create a feature branch.  
+2. Write clear, focused commits—one logical change per commit.  
+3. Open a pull request with a description of what you’ve changed and why.  
 4. Ensure all existing tests pass and add tests for new features.
 
 ## 📜 License
 
 Distributed under the **MIT** License. See [`LICENSE`](./LICENSE) for details.
+
