@@ -23,7 +23,8 @@
     "lint": "biome check . && tsc --noEmit",
     "format": "biome format --write .",
     "bundle": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "prepack": "tsup"
   },
   "exports": {
     ".": {
