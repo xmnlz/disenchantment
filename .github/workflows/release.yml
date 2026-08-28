@@ -22,4 +22,4 @@ jobs:
           deno-version: v2.x
       - run: deno install --no-lock --allow-scripts
       - name: Publish to JSR
-        run: deno run -A jsr:@david/publish-on-tag@0.2.0
+        run: deno run -A --no-lock jsr:@david/publish-on-tag@0.2.0
