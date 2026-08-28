@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 import type { ClientEvents } from "discord.js";
-import { createEvent } from "../src/event";
 import type { EventHandler, SimpleEvent } from "../src/event";
+import { createEvent } from "../src/event";
 
 describe("createEvent()", () => {
   const makeHandler = <N extends keyof ClientEvents>() =>

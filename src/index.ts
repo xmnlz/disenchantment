@@ -15,15 +15,12 @@
  * @module
  */
 
-export { createBot, initApplicationCommands } from "./core.js";
-
 export { createCommand } from "./command.js";
+export { createBot, initApplicationCommands } from "./core.js";
 export { createEvent } from "./event.js";
 
 export { group } from "./group.js";
-export { guards } from "./guard.js";
 export type { GuardFn } from "./guard.js";
-
-export { option } from "./option.js";
-
+export { guards } from "./guard.js";
 export { handleCommandInteraction } from "./handlers.js";
+export { option } from "./option.js";

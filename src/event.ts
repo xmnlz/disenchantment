@@ -1,5 +1,5 @@
-import { RESTEvents } from "discord.js";
 import type { Client, ClientEvents, RestEvents } from "discord.js";
+import { RESTEvents } from "discord.js";
 
 /**
  * Every event name a handler can be registered for: the gateway events emitted

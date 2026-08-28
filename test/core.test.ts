@@ -7,7 +7,7 @@ import {
 } from "discord.js";
 import { createCommand } from "../src/command";
 import { createBot, initApplicationCommands } from "../src/core";
-import { SimpleEvent, createEvent } from "../src/event";
+import { createEvent, SimpleEvent } from "../src/event";
 import { MetadataStorage } from "../src/metadata-storage";
 
 const { Guilds } = IntentsBitField.Flags;

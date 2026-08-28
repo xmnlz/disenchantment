@@ -1,6 +1,6 @@
 import { describe, expect, it, mock, test } from "bun:test";
 import { LocalizationMap } from "discord.js";
-import { type SimpleCommand, createCommand } from "../src/command";
+import { createCommand, type SimpleCommand } from "../src/command";
 import type { GuardFn } from "../src/guard";
 
 describe("createCommand()", () => {
